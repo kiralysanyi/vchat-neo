@@ -65,7 +65,7 @@ const consumerHandler = (
         });
     };
 
-    // Attach listeners once
+    // Attach listeners
     socket.on("createConsumerTransport", onCreateConsumerTransport);
     socket.on("connectConsumerTransport", onConnectConsumerTransport);
     socket.on("consume", onConsume);

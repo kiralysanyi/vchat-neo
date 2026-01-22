@@ -5,47 +5,84 @@ import { LISTEN_IPS } from "../config";
 import { ExtendedProducer } from "../types/ExtendedProducer";
 import { ExtendedSocket } from "../types/ExtendedSocket";
 
-const producerHandler = (router: Router, socket: ExtendedSocket, producers: Record<string, ExtendedProducer>, onCreate?: (transportId: string) => void): Promise<Function> => {
+const producerHandler = (
+    router: Router, 
+    socket: ExtendedSocket, 
+    producers: Record<string, ExtendedProducer>, 
+    onCreate?: (transportId: string) => void
+): void => {
+    
+    let transport: Transport | null = null;
 
-    return new Promise((resolved) => {
-        const onCreateProducerTransport = async (_: any, cb: any) => {
-            const { transport, params } = await createTransport(router, LISTEN_IPS);
+    // 1. Create Transport logic
+    const onCreateProducerTransport = async (_: any, cb: any) => {
+        try {
+            const { transport: newTransport, params } = await createTransport(router, LISTEN_IPS);
+            transport = newTransport;
+
             producers[transport.id] = {
                 transportId: transport.id,
                 producers: {}
-            }
-            cb(params)
+            };
 
-            if (onCreate) {
-                onCreate(transport.id)
-            }
-
-            const onConnectProducerTransport = async ({ dtlsParameters }: { dtlsParameters: DtlsParameters }, cb: any) => {
-                await transport.connect({ dtlsParameters })
-                cb()
-
-                const onProduceEvent = async ({ kind, rtpParameters, payloadId }: { kind: MediaKind, rtpParameters: RtpParameters, payloadId: number }, cb: any) => {
-                    const producer = await transport.produce({ rtpParameters, kind });
-                    cb({
-                        id: producer.id
-                    });
-                    producers[transport.id].producers[payloadId] = producer
-                }
-
-                socket.on("produce", onProduceEvent);
-                socket.detachProducer = () => {
-                    socket.off("produce", onProduceEvent);
-                    socket.off("connectProducerTransport", onConnectProducerTransport);
-                    socket.off("createProducerTransport", onCreateProducerTransport);
-                    transport.close();
-                }
-            }
-
-            socket.on("connectProducerTransport", onConnectProducerTransport)
+            if (onCreate) onCreate(transport.id);
+            cb(params);
+        } catch (error) {
+            console.error("Failed to create producer transport:", error);
+            cb({ error: "Internal Server Error" });
         }
+    };
 
-        socket.on("createProducerTransport", onCreateProducerTransport)
-    })
-}
+    // 2. Connection handshake logic
+    const onConnectProducerTransport = async ({ dtlsParameters }: { dtlsParameters: DtlsParameters }, cb: any) => {
+        if (!transport) return cb({ error: "Transport not initialized" });
+        
+        try {
+            await transport.connect({ dtlsParameters });
+            cb();
+        } catch (error) {
+            cb({ error: "Connection failed" });
+        }
+    };
+
+    // 3. Media production logic
+    const onProduceEvent = async ({ kind, rtpParameters, payloadId }: { kind: MediaKind, rtpParameters: RtpParameters, payloadId: number }, cb: any) => {
+        if (!transport) return cb({ error: "Transport not ready" });
+
+        try {
+            const producer = await transport.produce({ rtpParameters, kind });
+
+            // Store the producer in our record
+            producers[transport.id].producers[payloadId] = producer;
+
+            // Clean up record if producer closes
+            producer.on("transportclose", () => {
+                producer.close();
+                delete producers[transport!.id].producers[payloadId];
+            });
+
+            cb({ id: producer.id });
+        } catch (error: any) {
+            cb({ error: error.message });
+        }
+    };
+
+    // Attach listeners once at the top level
+    socket.on("createProducerTransport", onCreateProducerTransport);
+    socket.on("connectProducerTransport", onConnectProducerTransport);
+    socket.on("produce", onProduceEvent);
+
+    // Cleanup function
+    socket.detachProducer = () => {
+        socket.off("createProducerTransport", onCreateProducerTransport);
+        socket.off("connectProducerTransport", onConnectProducerTransport);
+        socket.off("produce", onProduceEvent);
+        
+        if (transport) {
+            transport.close();
+            delete producers[transport.id];
+        }
+    };
+};
 
 export default producerHandler;
