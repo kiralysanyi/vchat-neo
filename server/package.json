@@ -19,6 +19,7 @@
     "typescript": "^5.4.4"
   },
   "dependencies": {
+    "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "mediasoup": "^3.19.14",

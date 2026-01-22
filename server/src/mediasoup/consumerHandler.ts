@@ -3,64 +3,79 @@ import { Socket } from "socket.io"
 import createTransport from "./createTransport"
 import { LISTEN_IPS } from "../config"
 import { ExtendedProducer } from "../types/ExtendedProducer"
+import { ExtendedSocket } from "../types/ExtendedSocket"
 
-const consumerHandler = (router: Router, socket: Socket, producers: Record<string, ExtendedProducer>, onConsumeRequest: (producerId: string, accept: Function, deny: Function) => void): Promise<Function> => {
-    return new Promise((resolved) => {
-        const onCreateConsumerTansport = async (_: any, cb: any) => {
-            const { transport, params } = await createTransport(router, LISTEN_IPS);
+const consumerHandler = (
+    router: Router, 
+    socket: ExtendedSocket, 
+    producers: Record<string, ExtendedProducer>, 
+    onConsumeRequest: (producerId: string, accept: Function, deny: Function) => void
+): void => {
+    
+    let transport: Transport | null = null;
 
-            const onConnectConsumerTransport = async ({ dtlsParameters }: { dtlsParameters: DtlsParameters }, cb: any) => {
-                await transport.connect({ dtlsParameters })
+    const onCreateConsumerTransport = async (_: any, cb: any) => {
+        const { transport: newTransport, params } = await createTransport(router, LISTEN_IPS);
+        transport = newTransport;
 
-                const onConsume = ({ rtpCapabilities, transportId, payloadId }: { rtpCapabilities: RtpCapabilities, transportId: string, payloadId: number }, cb: any) => {
-                    onConsumeRequest(transportId, async () => {
-                        //accept
-                        const producerId = producers[transportId].producers[payloadId].id;
-                        if (!router.canConsume({ producerId: producerId, rtpCapabilities })) {
-                            cb({ error: "Router reported that consume is not possible" })
-                            console.error("Router reported that consume is not possible")
-                            return;
-                        }
+        // Cleanup if transport is closed
+        transport.on("routerclose", () => transport?.close());
 
-                        const consumer = await transport.consume({
-                            producerId,
-                            rtpCapabilities
-                        })
+        cb(params);
+    };
 
-                        cb({
-                            id: consumer.id,
-                            producerId: producerId,
-                            kind: consumer.kind,
-                            rtpParameters: consumer.rtpParameters
-                        });
+    const onConnectConsumerTransport = async ({ dtlsParameters }: { dtlsParameters: DtlsParameters }, cb: any) => {
+        if (!transport) return cb({ error: "Transport not found" });
+        
+        await transport.connect({ dtlsParameters });
+        cb(); // Acknowledge connection
+    };
 
-                        
+    const onConsume = async ({ rtpCapabilities, transportId, payloadId }: any, cb: any) => {
+        if (!transport) return cb({ error: "Transport not created" });
 
-                    }, () => {
-                        //deny
-                        cb({ error: "Consume denied" })
-                    })
+        onConsumeRequest(transportId, async () => {
+            try {
+                const producerId = producers[transportId]?.producers[payloadId]?.id;
+
+                if (!router.canConsume({ producerId, rtpCapabilities })) {
+                    return cb({ error: "Cannot consume" });
                 }
 
-                socket.on("consume", onConsume)
-                cb();
+                const consumer = await transport!.consume({
+                    producerId,
+                    rtpCapabilities,
+                    paused: true, // Start paused to prevent packet loss before client is ready
+                });
 
-                resolved(() => {
-                    socket.off("consume", onConsume);
-                    socket.off("connectConsumerTransport", onConnectConsumerTransport);
-                    socket.off("createConsumerTransport", onCreateConsumerTansport);
-                    transport.close();
-                })
+                // Resume the consumer so media starts flowing
+                await consumer.resume();
 
+                cb({
+                    id: consumer.id,
+                    producerId,
+                    kind: consumer.kind,
+                    rtpParameters: consumer.rtpParameters
+                });
+            } catch (err: any) {
+                cb({ error: err.message });
             }
+        }, () => {
+            cb({ error: "Consume denied" });
+        });
+    };
 
-            socket.on("connectConsumerTransport", onConnectConsumerTransport)
+    // Attach listeners once
+    socket.on("createConsumerTransport", onCreateConsumerTransport);
+    socket.on("connectConsumerTransport", onConnectConsumerTransport);
+    socket.on("consume", onConsume);
 
-            cb(params)
-        }
-
-        socket.on("createConsumerTransport", onCreateConsumerTansport)
-    })
-}
+    socket.detachConsumer = () => {
+        socket.off("createConsumerTransport", onCreateConsumerTransport);
+        socket.off("connectConsumerTransport", onConnectConsumerTransport);
+        socket.off("consume", onConsume);
+        transport?.close();
+    };
+};
 
 export default consumerHandler

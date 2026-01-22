@@ -3,8 +3,9 @@ import { Socket } from "socket.io";
 import createTransport from "./createTransport";
 import { LISTEN_IPS } from "../config";
 import { ExtendedProducer } from "../types/ExtendedProducer";
+import { ExtendedSocket } from "../types/ExtendedSocket";
 
-const producerHandler = (router: Router, socket: Socket, producers: Record<string, ExtendedProducer>, onCreate?: (transportId: string) => void): Promise<Function> => {
+const producerHandler = (router: Router, socket: ExtendedSocket, producers: Record<string, ExtendedProducer>, onCreate?: (transportId: string) => void): Promise<Function> => {
 
     return new Promise((resolved) => {
         const onCreateProducerTransport = async (_: any, cb: any) => {
@@ -25,17 +26,19 @@ const producerHandler = (router: Router, socket: Socket, producers: Record<strin
 
                 const onProduceEvent = async ({ kind, rtpParameters, payloadId }: { kind: MediaKind, rtpParameters: RtpParameters, payloadId: number }, cb: any) => {
                     const producer = await transport.produce({ rtpParameters, kind });
-                    cb();
+                    cb({
+                        id: producer.id
+                    });
                     producers[transport.id].producers[payloadId] = producer
                 }
 
                 socket.on("produce", onProduceEvent);
-                resolved(() => {
+                socket.detachProducer = () => {
                     socket.off("produce", onProduceEvent);
                     socket.off("connectProducerTransport", onConnectProducerTransport);
                     socket.off("createProducerTransport", onCreateProducerTransport);
                     transport.close();
-                })
+                }
             }
 
             socket.on("connectProducerTransport", onConnectProducerTransport)
