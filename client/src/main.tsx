@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 import Index from './pages/Index'
 import TestProduce from './pages/TestProduce'
 import TestConsume from './pages/TestConsume'
+import Join from './pages/Join'
 
 const router = createBrowserRouter([
   {
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
     path: "/test/consume",
     element: <TestConsume />
+  },
+  {
+    path: "/join/:id",
+    element: <Join />
   }
 ])
 

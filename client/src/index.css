@@ -3,3 +3,29 @@
 button {
   @apply border-2 border-blue-600 rounded-sm p-2 bg-blue-600 text-white cursor-pointer;
 }
+
+input {
+  @apply border-2 border-blue-600 rounded-sm p-2 bg-blue-950 text-white outline-0;
+}
+
+button:hover, input:hover, input:focus {
+   @apply shadow-2xl shadow-blue-600 border-blue-400;
+}
+
+:root {
+  @apply bg-zinc-900 text-white;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1rem;
+}
+
+.page {
+  @apply w-full h-full top-0 left-0 fixed flex;
+}
+
+h1 {
+  font-size: 3rem;
+}
+
+.form-group {
+  @apply flex flex-col;
+}
