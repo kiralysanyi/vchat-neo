@@ -69,7 +69,7 @@ const createRouter = async (worker: Worker) => {
 
     const router = await worker.createRouter({ mediaCodecs });
 
-    return worker;
+    return router;
 }
 
 export default createRouter;

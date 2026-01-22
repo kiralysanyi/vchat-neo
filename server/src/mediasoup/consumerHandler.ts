@@ -4,7 +4,7 @@ import createTransport from "./createTransport"
 import { LISTEN_IPS } from "../config"
 import { ExtendedProducer } from "../types/ExtendedProducer"
 
-const consumerHandler = (router: Router, socket: Socket, producers: Record<string, ExtendedProducer>, onConsumeRequest: (producerId: string, accept: Function, deny: Function) => void, onConsumer: (consumer: Consumer) => void): Promise<Function> => {
+const consumerHandler = (router: Router, socket: Socket, producers: Record<string, ExtendedProducer>, onConsumeRequest: (producerId: string, accept: Function, deny: Function) => void): Promise<Function> => {
     return new Promise((resolved) => {
         const onCreateConsumerTansport = async (_: any, cb: any) => {
             const { transport, params } = await createTransport(router, LISTEN_IPS);
@@ -34,7 +34,7 @@ const consumerHandler = (router: Router, socket: Socket, producers: Record<strin
                             rtpParameters: consumer.rtpParameters
                         });
 
-                        onConsumer(consumer);
+                        
 
                     }, () => {
                         //deny
@@ -49,6 +49,7 @@ const consumerHandler = (router: Router, socket: Socket, producers: Record<strin
                     socket.off("consume", onConsume);
                     socket.off("connectConsumerTransport", onConnectConsumerTransport);
                     socket.off("createConsumerTransport", onCreateConsumerTansport);
+                    transport.close();
                 })
 
             }
