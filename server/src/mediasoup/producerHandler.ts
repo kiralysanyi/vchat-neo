@@ -1,17 +1,16 @@
 import { DtlsParameters, MediaKind, Producer, Router, RtpParameters, Transport } from "mediasoup/node/lib/types";
-import { Socket } from "socket.io";
 import createTransport from "./createTransport";
 import { LISTEN_IPS } from "../config";
 import { ExtendedProducer } from "../types/ExtendedProducer";
 import { ExtendedSocket } from "../types/ExtendedSocket";
 
 const producerHandler = (
-    router: Router, 
-    socket: ExtendedSocket, 
-    producers: Record<string, ExtendedProducer>, 
+    router: Router,
+    socket: ExtendedSocket,
+    producers: Record<string, ExtendedProducer>,
     onCreate?: (transportId: string) => void
 ): void => {
-    
+
     let transport: Transport | null = null;
 
     // 1. Create Transport logic
@@ -36,7 +35,7 @@ const producerHandler = (
     // 2. Connection handshake logic
     const onConnectProducerTransport = async ({ dtlsParameters }: { dtlsParameters: DtlsParameters }, cb: any) => {
         if (!transport) return cb({ error: "Transport not initialized" });
-        
+
         try {
             await transport.connect({ dtlsParameters });
             cb();
@@ -58,6 +57,7 @@ const producerHandler = (
             // Clean up record if producer closes
             producer.on("transportclose", () => {
                 producer.close();
+                console.log("Transport closed")
                 delete producers[transport!.id].producers[payloadId];
             });
 
@@ -66,6 +66,16 @@ const producerHandler = (
             cb({ error: error.message });
         }
     };
+
+    const onPclose = (transportId: string, payloadId: number) => {
+        if (producers[transportId].producers[payloadId]) {
+            producers[transportId].producers[payloadId].close()
+            delete producers[transportId].producers[payloadId];
+            console.log("Closed producer: ", transportId, payloadId)
+        }
+    }
+
+    socket.on("pclose", onPclose);
 
     // Attach listeners once at the top level
     socket.on("createProducerTransport", onCreateProducerTransport);
@@ -77,7 +87,8 @@ const producerHandler = (
         socket.off("createProducerTransport", onCreateProducerTransport);
         socket.off("connectProducerTransport", onConnectProducerTransport);
         socket.off("produce", onProduceEvent);
-        
+        socket.off("pclose", onPclose);
+
         if (transport) {
             transport.close();
             delete producers[transport.id];

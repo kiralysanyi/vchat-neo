@@ -14,8 +14,16 @@ const TestConsume = () => {
         if (device) {
             createRecvTransport(socket, device).then((getstream) => {
                 console.log("Transport ready")
-                getstream(transportid, 3).then((stream) => {
+                getstream(transportid, 3, () => {
+                    // consumer closed
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = null;
+                    }
+                }).then((stream) => {
                     console.log("Got stream: ", stream)
+                    stream.getTracks()[0].onended = () => {
+                        console.log("Stream ended")
+                    }
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
                     }

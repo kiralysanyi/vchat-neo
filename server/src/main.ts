@@ -7,7 +7,6 @@ import createRouter from "./mediasoup/createRouter";
 import { PORT } from "./config";
 import producerHandler from "./mediasoup/producerHandler";
 import { ExtendedProducer } from "./types/ExtendedProducer";
-import { Producer } from "mediasoup/node/lib/types";
 import consumerHandler from "./mediasoup/consumerHandler";
 import { ExtendedSocket } from "./types/ExtendedSocket";
 import cors from "cors";
@@ -25,6 +24,7 @@ createWorker().then(async (worker) => {
     const router = await createRouter(worker)
 
     io.on("connection", async (socket: ExtendedSocket) => {
+
         producerHandler(router, socket, producerTransports, (transportId) => {
             socket.on("disconnect", () => {
                 delete producerTransports[transportId];
@@ -34,6 +34,16 @@ createWorker().then(async (worker) => {
         consumerHandler(router, socket, producerTransports, (transportId, accept, deny) => {
             console.log(transportId)
             accept();
+        })
+
+        socket.on("disconnect", () => {
+            if (socket.detachConsumer) {
+                socket.detachConsumer();
+            }
+
+            if (socket.detachProducer) {
+                socket.detachProducer();
+            }
         })
 
         console.log("Connected socket")

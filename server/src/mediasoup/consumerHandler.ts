@@ -1,5 +1,4 @@
 import { Transport, Router, DtlsParameters, RtpCapabilities, MediaKind, Consumer } from "mediasoup/node/lib/types"
-import { Socket } from "socket.io"
 import createTransport from "./createTransport"
 import { LISTEN_IPS } from "../config"
 import { ExtendedProducer } from "../types/ExtendedProducer"
@@ -36,7 +35,8 @@ const consumerHandler = (
 
         onConsumeRequest(transportId, async () => {
             try {
-                const producerId = producers[transportId]?.producers[payloadId]?.id;
+                const producer = producers[transportId]?.producers[payloadId];
+                const producerId = producer.id;
 
                 if (!router.canConsume({ producerId, rtpCapabilities })) {
                     return cb({ error: "Cannot consume" });
@@ -50,6 +50,12 @@ const consumerHandler = (
 
                 // Resume the consumer so media starts flowing
                 await consumer.resume();
+
+                // attach producer close listener
+                producer.on("@close", () => {
+                    consumer.close();
+                    socket.emit("conclose", consumer.id)
+                })
 
                 cb({
                     id: consumer.id,

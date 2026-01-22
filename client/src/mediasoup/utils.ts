@@ -1,5 +1,5 @@
 import { Device } from "mediasoup-client"
-import type { AppData, MediaKind, RtpParameters, Transport, TransportOptions } from "mediasoup-client/types"
+import type { AppData, Consumer, MediaKind, RtpParameters, Transport, TransportOptions } from "mediasoup-client/types"
 import type { Socket } from "socket.io-client"
 
 const transports: Record<string, Transport> = {}
@@ -23,20 +23,29 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
             onCreateTransport(transport)
 
             // return addStream function
-            resolve((stream, payloadId) => {
+            resolve(async (stream, payloadId) => {
                 transport.once("produce", ({ kind, rtpParameters }, cb) => {
                     socket.emit("produce", { kind, rtpParameters, payloadId }, cb);
                 });
 
-                transport.produce({
-                    track: stream.getTracks()[0]
+                const track = stream.getTracks()[0];
+
+                const producer = await transport.produce({
+                    track: track
+                })
+
+                // if track ended, close the producer
+                track.addEventListener("ended", () => {
+                    console.log("Stream ended, closing producer");
+                    producer.close();
+                    socket.emit("pclose", transport.id, payloadId);
                 })
             });
         })
     });
 }
 
-const createRecvTransport = (socket: Socket, device: Device): Promise<(transportId: string, payloadId: number) => Promise<MediaStream>> => {
+const createRecvTransport = (socket: Socket, device: Device): Promise<(transportId: string, payloadId: number, onClose: Function) => Promise<MediaStream>> => {
     return new Promise((resolve) => {
         socket.emit("createConsumerTransport", {}, (params: TransportOptions<AppData>) => {
             console.log("Creating transport")
@@ -50,7 +59,18 @@ const createRecvTransport = (socket: Socket, device: Device): Promise<(transport
             });
 
             // return consume function
-            resolve((transportId: string, payloadId: number) => {
+
+            const consumers: Record<string, Consumer> = {};
+
+            socket.on("conclose", (consumerId: string) => {
+                if (consumers[consumerId]) {
+                    consumers[consumerId].close()
+                    delete consumers[consumerId];
+                    console.log("Consumer closed because producer closed", consumerId)
+                }
+            })
+
+            resolve((transportId: string, payloadId: number, onClose: Function) => {
                 return new Promise((resolveStream) => {
                     console.log("Consume stream:", transportId, payloadId)
                     
@@ -68,7 +88,13 @@ const createRecvTransport = (socket: Socket, device: Device): Promise<(transport
                                 rtpParameters: data.rtpParameters,
                             });
 
+                            consumers[consumer.id] = consumer;
+
                             console.log("attached consumer")
+
+                            consumer.on("@close", () => {
+                                onClose();
+                            })
 
                             resolveStream(new MediaStream([consumer.track]))
                         });
