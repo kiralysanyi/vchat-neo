@@ -4,32 +4,11 @@ const createRouter = async (worker: Worker) => {
     let mediaCodecs: RouterRtpCodecCapability[] = [
         {
             kind: 'video',
-            mimeType: 'video/VP8',
-            clockRate: 90000,
-            parameters: {
-                'x-google-start-bitrate': 1000
-            }
-        },
-        {
-            kind: 'video',
             mimeType: "video/VP9",
             clockRate: 90000,
             parameters: {
                 'x-google-start-bitrate': 1000,
             }
-        },
-        {
-            kind: 'video',
-            mimeType: 'video/AV1',
-            clockRate: 90000,
-            parameters: {},
-            rtcpFeedback: [
-                { type: 'nack' },
-                { type: 'nack', parameter: 'pli' },
-                { type: 'ccm', parameter: 'fir' },
-                { type: 'goog-remb' },
-                { type: 'transport-cc' },
-            ],
         },
         {
             kind: 'video',
@@ -47,6 +26,27 @@ const createRouter = async (worker: Worker) => {
                 { type: 'goog-remb' },
                 { type: 'transport-cc' }
             ]
+        },
+        {
+            kind: 'video',
+            mimeType: 'video/VP8',
+            clockRate: 90000,
+            parameters: {
+                'x-google-start-bitrate': 1000
+            }
+        },
+        {
+            kind: 'video',
+            mimeType: 'video/AV1',
+            clockRate: 90000,
+            parameters: {},
+            rtcpFeedback: [
+                { type: 'nack' },
+                { type: 'nack', parameter: 'pli' },
+                { type: 'ccm', parameter: 'fir' },
+                { type: 'goog-remb' },
+                { type: 'transport-cc' },
+            ],
         },
         {
             kind: 'audio',

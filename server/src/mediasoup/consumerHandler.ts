@@ -57,6 +57,11 @@ const consumerHandler = (
                     socket.emit("conclose", consumer.id)
                 })
 
+                producer.on("transportclose", () => {
+                    consumer.close();
+                    socket.emit("conclose", consumer.id)
+                })
+
                 cb({
                     id: consumer.id,
                     producerId,
