@@ -80,7 +80,7 @@ createWorker().then(async (worker) => {
 
     //get meeting info
 
-    app.get("/api/meetinfo/:id", (req, res) => {
+    app.get("/api/meeting/:id", (req, res) => {
         const meeting = meetings[req.params.id];
 
         if (meeting == undefined) {

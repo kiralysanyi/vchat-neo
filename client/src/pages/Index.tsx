@@ -20,7 +20,7 @@ const Index = () => {
                         headers: { "Content-Type": "application/json" },
                     }).then((res) => {
                         if (res.status == 201) {
-                            navigate("/join/" + id)
+                            navigate("/meeting/join/" + id)
                         } else {
                             setInputsDisabled(false)
                         }
@@ -29,7 +29,7 @@ const Index = () => {
 
                 case 200:
                     //room exists, join
-                    navigate("/join/" + id)
+                    navigate("/meeting/join/" + id)
                     break;
 
                 default:
