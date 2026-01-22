@@ -1,13 +1,10 @@
 
 import express from "express";
 import http from "http"
-import { config } from "dotenv";
 import { Server } from "socket.io";
 import { createWorker } from "mediasoup";
 import createRouter from "./mediasoup/createRouter";
-
-config();
-const PORT = process.env.PORT;
+import { PORT } from "./config";
 
 const app = express();
 const server = http.createServer(app);
