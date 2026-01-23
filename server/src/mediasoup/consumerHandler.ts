@@ -69,6 +69,7 @@ const consumerHandler = (
                     rtpParameters: consumer.rtpParameters
                 });
             } catch (err: any) {
+                console.error("Consume error: ", err)
                 cb({ error: err.message });
             }
         }, () => {

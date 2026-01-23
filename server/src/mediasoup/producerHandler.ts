@@ -73,6 +73,10 @@ const producerHandler = (
     };
 
     const onPclose = (transportId: string, payloadId: number) => {
+        if (producers[transportId] == undefined) {
+            return;
+        }
+        
         if (producers[transportId].producers[payloadId]) {
             producers[transportId].producers[payloadId].close()
             onProducerClose && onProducerClose(transportId, payloadId)

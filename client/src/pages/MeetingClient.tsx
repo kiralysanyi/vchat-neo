@@ -72,7 +72,7 @@ const MeetingClient = () => {
 
     // 3. Handle Receiving Streams
     useEffect(() => {
-        if (!device) return;
+        if (!device || !connected) return;
 
         let getStreamFunc: any;
 
@@ -122,7 +122,7 @@ const MeetingClient = () => {
         socket.on("newProducer", onNewProducer);
 
         return () => { socket.off("newProducer", onNewProducer); };
-    }, [device]);
+    }, [device, connected]);
 
     const [transportId, setTransportId] = useState<string>()
 

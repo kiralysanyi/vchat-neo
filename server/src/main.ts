@@ -170,10 +170,12 @@ createWorker().then(async (worker) => {
 
         socket.on("disconnect", () => {
             if (socket.detachConsumer) {
+                console.log("Detaching consumer handler from", socket.id)
                 socket.detachConsumer();
             }
 
             if (socket.detachProducer) {
+                console.log("Detaching producer handler from", socket.id)
                 socket.detachProducer();
             }
         })
