@@ -1,8 +1,8 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { DataContext } from "../providers/DataProvider";
 import { useNavigate, useParams } from "react-router";
-import getCamera from "../capture/getCamera";
-import getMicrophone from "../capture/getMicrophone";
+import { checkCamera, getCamera } from "../capture/getCamera";
+import { checkMicrophone, getMicrophone } from "../capture/getMicrophone";
 import socket from "../socket";
 import { createRecvTransport, createSendTransport } from "../mediasoup/utils";
 import { Device } from "mediasoup-client";
@@ -10,7 +10,7 @@ import getRouterCapabilities from "../mediasoup/getRouterCapabilities";
 import type { Participant } from "../types/Participant";
 import StreamPlayer from "../components/StreamPlayer";
 import config from "../config";
-import getScreen from "../capture/getScreen";
+import { getScreen, checkScreenSupport } from "../capture/getScreen";
 import type { Transport } from "mediasoup-client/types";
 import { CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
 
@@ -37,6 +37,20 @@ const MeetingClient = () => {
     const recTransportRef = useRef<Transport>(undefined);
     const sendTransportRef = useRef<Transport>(undefined);
 
+    const [hasAudio, setHasAudio] = useState(false);
+    const [hasVideo, setHasVideo] = useState(false);
+
+    // check device
+    useEffect(() => {
+        checkCamera().then((has) => {
+            setHasVideo(has)
+        })
+
+        checkMicrophone().then((has) => {
+            setHasAudio(has)
+        })
+    }, [])
+
     // 1. Navigation Guard
     useEffect(() => {
         if (connected) {
@@ -57,7 +71,7 @@ const MeetingClient = () => {
     // 2. Setup Device
     useEffect(() => {
         if (!connected) return;
-        
+
         let isMounted = true;
         const dev = new Device();
 
@@ -394,15 +408,15 @@ const MeetingClient = () => {
                 {viewedParticipant.screenAudioStream && <StreamPlayer volume={streamVolume} stream={viewedParticipant.screenAudioStream} />}
             </div>}
             <div className="dock">
-                <button className={cameraStream ? "btn-red" : ""} onClick={toggleCamera}>
+                {hasVideo && <button className={cameraStream ? "btn-red" : ""} onClick={toggleCamera}>
                     <CameraIcon width={32} height={32} />
-                </button>
-                <button className={microphoneStream ? "btn-red" : ""} onClick={toggleMicrophone}>
+                </button>}
+                {hasAudio && <button className={microphoneStream ? "btn-red" : ""} onClick={toggleMicrophone}>
                     <MicrophoneIcon width={32} height={32} />
-                </button>
-                <button className={screenStream ? "btn-red" : ""} onClick={toggleScreen}>
+                </button>}
+                {checkScreenSupport() && <button className={screenStream ? "btn-red" : ""} onClick={toggleScreen}>
                     <ComputerDesktopIcon width={32} height={32} />
-                </button>
+                </button>}
                 <button className="btn-red" onClick={() => {
                     navigate("/")
                 }}>

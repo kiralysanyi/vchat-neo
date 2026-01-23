@@ -2,8 +2,8 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import config from "../config";
 import { DataContext } from "../providers/DataProvider";
-import getCamera from "../capture/getCamera";
-import getMicrophone from "../capture/getMicrophone";
+import { checkCamera, getCamera } from "../capture/getCamera";
+import { checkMicrophone, getMicrophone } from "../capture/getMicrophone";
 
 const Join = () => {
     const [meetingInfo, setMeetingInfo] = useState<{ id: string, participants: Record<string, {}> } | null>(null)
@@ -20,7 +20,10 @@ const Join = () => {
         setNickname
     } = useContext(DataContext)
 
-    const [newNickname, setNewNickname] = useState("")
+    const [newNickname, setNewNickname] = useState("");
+
+    const [hasAudio, setHasAudio] = useState(false);
+    const [hasVideo, setHasVideo] = useState(false);
 
     useEffect(() => {
         fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json" } }).then(async (res) => {
@@ -30,6 +33,15 @@ const Join = () => {
             } else {
                 navigate("/")
             }
+        })
+
+        // check device
+        checkCamera().then((has) => {
+            setHasVideo(has)
+        })
+
+        checkMicrophone().then((has) => {
+            setHasAudio(has)
         })
     }, [])
 
@@ -91,8 +103,8 @@ const Join = () => {
                 <h1>{params.id}</h1>
                 {meetingInfo ? <span>Participants: {Object.keys(meetingInfo.participants).length}</span> : ""}
                 <div className="flex flex-row gap-4">
-                    <button onClick={toggleCamera}>{cameraStream ? "Disable Camera" : "Enable camera"}</button>
-                    <button onClick={toggleMicrophone}>{microphoneStream ? "Disable Microphone" : "Enable Microphone"}</button>
+                    {hasVideo && <button onClick={toggleCamera}>{cameraStream ? "Disable Camera" : "Enable camera"}</button>}
+                    {hasAudio && <button onClick={toggleMicrophone}>{microphoneStream ? "Disable Microphone" : "Enable Microphone"}</button>}
                 </div>
                 <div className="form-group">
                     <label htmlFor="nickname">Nickname</label>
