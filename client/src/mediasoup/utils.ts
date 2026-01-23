@@ -45,13 +45,14 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
     });
 }
 
-const createRecvTransport = (socket: Socket, device: Device): Promise<(transportId: string, payloadId: number, onClose: Function) => Promise<{stream: MediaStream, close: Function}>> => {
+const createRecvTransport = (socket: Socket, device: Device, onCreateTransport : (transport: Transport) => void): Promise<(transportId: string, payloadId: number, onClose: Function) => Promise<{stream: MediaStream, close: Function}>> => {
     return new Promise((resolve) => {
         socket.emit("createConsumerTransport", {}, (params: TransportOptions<AppData>) => {
             console.log("Creating transport")
             const transport = device.createRecvTransport(params);
             transports[transport.id] = transport;
             console.log("Transport created: ", transport)
+            onCreateTransport(transport)
 
             transport.on("connect", ({ dtlsParameters }, cb) => {
                 console.log("Transport connecting")

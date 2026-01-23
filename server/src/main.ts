@@ -68,7 +68,7 @@ createWorker().then(async (worker) => {
             }
 
             socket.once("consumeReady", () => {
-                socket.emit("participants", meetings[meetingId].participants)
+                socket.emit("initialConsume", meetings[meetingId].participants)
             })
 
             socket.emit("participants", meetings[meetingId].participants)

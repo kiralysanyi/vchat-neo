@@ -11,6 +11,7 @@ import type { Participant } from "../types/Participant";
 import StreamPlayer from "../components/StreamPlayer";
 import config from "../config";
 import getScreen from "../capture/getScreen";
+import type { Transport } from "mediasoup-client/types";
 
 const MeetingClient = () => {
     const {
@@ -31,6 +32,9 @@ const MeetingClient = () => {
     const [connected, setConnected] = useState(socket.connected);
     const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
     const getStreamRef = useRef<(transportId: string, payloadId: number, onClose: Function) => Promise<{ stream: MediaStream, close: Function }>>(undefined)
+
+    const recTransportRef = useRef<Transport>(undefined);
+    const sendTransportRef = useRef<Transport>(undefined);
 
     // 1. Navigation Guard
     useEffect(() => {
@@ -69,7 +73,9 @@ const MeetingClient = () => {
 
         let getStreamFunc: any;
 
-        createRecvTransport(socket, device).then((getstream) => {
+        createRecvTransport(socket, device, (transport) => {
+            recTransportRef.current = transport;
+        }).then((getstream) => {
             getStreamFunc = getstream;
             getStreamRef.current = getstream;
             socket.emit("consumeReady");
@@ -78,7 +84,7 @@ const MeetingClient = () => {
         const onNewProducer = async (transportId: string, payloadId: number) => {
             if (!getStreamFunc) return;
 
-            const {stream} = await getStreamFunc(transportId, payloadId, () => {
+            const { stream } = await getStreamFunc(transportId, payloadId, () => {
                 // On Close: Remove stream from participant
                 setParticipants(prev => {
                     const updated = { ...prev };
@@ -113,7 +119,7 @@ const MeetingClient = () => {
         socket.on("newProducer", onNewProducer);
 
         // start consume streams at join
-        socket.once("participants", (data: Record<string, Participant>) => {
+        socket.once("initialConsume", (data: Record<string, Participant>) => {
             for (let i in data) {
                 onNewProducer(data[i].producerTransportId, 1).catch(() => console.log("No stream on ch 1"))
                 onNewProducer(data[i].producerTransportId, 2).catch(() => console.log("No stream on ch 2"))
@@ -134,7 +140,8 @@ const MeetingClient = () => {
 
         createSendTransport(socket, device, (transport) => {
             console.log("Send transport created");
-            setTransportId(transport.id)
+            setTransportId(transport.id);
+            sendTransportRef.current = transport;
         }).then((sendstream) => {
 
             setSendStream(() => sendstream);
@@ -321,6 +328,30 @@ const MeetingClient = () => {
             })
         }
     }
+
+    // close all transports on leave
+    useEffect(() => {
+        return () => {
+            screenStream?.getTracks().forEach((track) => {
+                track.onended && track.onended(new Event("ended"))
+                track.stop()
+            })
+
+            cameraStream?.getTracks().forEach((track) => {
+                track.onended && track.onended(new Event("ended"))
+                track.stop()
+            })
+
+            microphoneStream?.getTracks().forEach((track) => {
+                track.onended && track.onended(new Event("ended"))
+                track.stop()
+            })
+
+
+            sendTransportRef.current && sendTransportRef.current.close();
+            recTransportRef.current && recTransportRef.current.close();
+        }
+    }, [])
 
 
     return (
