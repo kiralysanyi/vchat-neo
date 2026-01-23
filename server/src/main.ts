@@ -105,6 +105,12 @@ createWorker().then(async (worker) => {
     app.post("/api/meeting/:id", (req, res) => {
         const id = req.params.id;
 
+        if (id == "join" || id.includes(' ')) {
+            return res.status(400).json({
+                error: "Invalid id"
+            })
+        }
+
         if (meetings[id]) {
             return res.status(409).json({
                 error: "Meeting exists"

@@ -6,11 +6,12 @@ const Index = () => {
     const [id, setId] = useState("");
     const [inputsDisabled, setInputsDisabled] = useState(false)
     const navigate = useNavigate();
+    const [error, setError] = useState<string>()
 
     const joinOrCreate = () => {
         setInputsDisabled(true);
 
-        fetch(config.serverUrl + "/api/meeting/" + id, { method: "GET", headers: { "Content-Type": "application/json" } }).then((res) => {
+        fetch(config.serverUrl + "/api/meeting/" + id, { method: "GET", headers: { "Content-Type": "application/json" } }).then(async (res) => {
 
             switch (res.status) {
                 case 404:
@@ -18,11 +19,14 @@ const Index = () => {
                     fetch(config.serverUrl + "/api/meeting/" + id, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                    }).then((res) => {
+                    }).then(async (res) => {
                         if (res.status == 201) {
                             navigate("/meeting/join/" + id)
                         } else {
                             setInputsDisabled(false)
+                            setInputsDisabled(false)
+                            const dat = await res.json();
+                            setError(dat["error"])
                         }
                     })
                     break;
@@ -34,6 +38,8 @@ const Index = () => {
 
                 default:
                     setInputsDisabled(false)
+                    const dat = await res.json();
+                    setError(dat["error"])
                     break;
             }
 
@@ -43,7 +49,7 @@ const Index = () => {
     return <div className="page">
         <div className="mx-auto my-auto flex flex-col gap-8">
             <h1>Join/Create Meeting</h1>
-
+            {error && <span className="bg-red-800 p-2">{error}</span>}
             <div className="form-group">
                 <label htmlFor="id">Meeting id</label>
                 <input disabled={inputsDisabled} value={id} onChange={(ev) => { setId(ev.target.value) }} type="text" placeholder="ID" />
