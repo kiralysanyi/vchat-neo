@@ -56,6 +56,8 @@ const MeetingClient = () => {
 
     // 2. Setup Device
     useEffect(() => {
+        if (!connected) return;
+        
         let isMounted = true;
         const dev = new Device();
 
@@ -66,7 +68,7 @@ const MeetingClient = () => {
         }).catch(console.error);
 
         return () => { isMounted = false; };
-    }, []);
+    }, [connected]);
 
     // 3. Handle Receiving Streams
     useEffect(() => {
@@ -141,22 +143,22 @@ const MeetingClient = () => {
     // 5. Produce Local Streams (Camera/Mic)
 
     useEffect(() => {
-        if (cameraStream && sendStream && sendTransportRef.current) {
+        if (cameraStream && sendStream && sendTransportRef.current && connected) {
             sendStream(cameraStream, 1).then(() => {
                 console.log("Sending camera stream")
                 socket.emit("addstream", 1)
             })
         }
-    }, [cameraStream, sendStream, sendTransportRef.current]);
+    }, [cameraStream, sendStream, sendTransportRef.current, connected]);
 
     useEffect(() => {
-        if (microphoneStream && sendStream && sendTransportRef.current) {
+        if (microphoneStream && sendStream && sendTransportRef.current && connected) {
             sendStream(microphoneStream, 2).then(() => {
                 console.log("Sending microphone stream")
                 socket.emit("addstream", 2)
             })
         }
-    }, [microphoneStream, sendStream, sendTransportRef.current]);
+    }, [microphoneStream, sendStream, sendTransportRef.current, connected]);
 
     // produce screen stream
     useEffect(() => {
@@ -212,6 +214,15 @@ const MeetingClient = () => {
     // handle disconnect
     useEffect(() => {
         const onDisconnect = () => {
+            if (recTransportRef.current) {
+                recTransportRef.current.close()
+            }
+
+            if (sendTransportRef.current) {
+                sendTransportRef.current.close()
+            }
+
+            setDevice(null)
             setConnected(false);
             setParticipants({});
         }
