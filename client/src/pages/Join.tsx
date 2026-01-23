@@ -17,7 +17,6 @@ const Join = () => {
         microphoneStream,
         setMicrophoneStream,
         setJoined,
-        nickname,
         setNickname
     } = useContext(DataContext)
 

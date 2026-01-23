@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { DataContext } from "../providers/DataProvider";
 import { useNavigate, useParams } from "react-router";
 import getCamera from "../capture/getCamera";
@@ -93,6 +93,18 @@ const MeetingClient = () => {
         };
 
         socket.on("newProducer", onNewProducer);
+
+        // start consume streams at join
+        socket.once("participants", (data: Record<string, Participant>) => {
+            for (let i in data) {
+                onNewProducer(data[i].producerTransportId, 1).catch(() => console.log("No stream on ch 1"))
+                onNewProducer(data[i].producerTransportId, 2).catch(() => console.log("No stream on ch 2"))
+                onNewProducer(data[i].producerTransportId, 3).catch(() => console.log("No stream on ch 3"))
+                onNewProducer(data[i].producerTransportId, 4).catch(() => console.log("No stream on ch 4"))
+
+            }
+        })
+
         return () => { socket.off("newProducer", onNewProducer); };
     }, [device]);
 
@@ -133,6 +145,15 @@ const MeetingClient = () => {
         if (!transportId) {
             return;
         }
+
+        const onLeft = (transportId: string) => {
+            setParticipants(prev => {
+                const { [transportId]: deletedItem, ...remaining } = prev;
+                return remaining;
+            });
+        }
+
+        socket.on("participantLeft", onLeft)
         socket.on("participants", (data: Record<string, Participant>) => setParticipants(data));
         socket.on("newJoined", (data: Participant) => {
             setParticipants(prev => ({ ...prev, [data.producerTransportId]: data }));
@@ -141,15 +162,21 @@ const MeetingClient = () => {
         socket.emit("join", params.id, transportId, nickname);
 
         return () => {
+            socket.off("participantLeft", onLeft)
             socket.off("participants");
             socket.off("newJoined");
+            socket.emit("leave");
         };
     }, [params.id, transportId]);
 
     // UI Handlers
     const toggleCamera = async () => {
         if (cameraStream) {
-            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream.getTracks().forEach((track) => {
+                track.stop();
+                track.onended ? track.onended(new Event("ended")) : null
+            });
+
             setCameraStream?.(null);
         } else {
             try {
@@ -161,7 +188,10 @@ const MeetingClient = () => {
 
     const toggleMicrophone = async () => {
         if (microphoneStream) {
-            microphoneStream.getTracks().forEach(track => track.stop());
+            microphoneStream.getTracks().forEach((track) => {
+                track.stop();
+                track.onended ? track.onended(new Event("ended")) : null
+            });
             setMicrophoneStream?.(null);
         } else {
             try {

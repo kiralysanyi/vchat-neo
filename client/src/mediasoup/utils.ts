@@ -35,11 +35,11 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                 })
 
                 // if track ended, close the producer
-                track.addEventListener("ended", () => {
+                track.onended = () => {
                     console.log("Stream ended, closing producer");
                     producer.close();
                     socket.emit("pclose", transport.id, payloadId);
-                })
+                }
             });
         })
     });

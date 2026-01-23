@@ -69,11 +69,14 @@ createWorker().then(async (worker) => {
 
             socket.on("addstream", onAddStream)
 
-            socket.once("disconnect", () => {
+            const onLeave = () => {
                 socket.off("addstream", onAddStream)
                 socket.to(meeting.id).emit("participantLeft", transportId)
                 delete meeting.participants[transportId];
-            })
+            }
+
+            socket.once("disconnect", onLeave)
+            socket.once("leave", onLeave)
         })
 
         socket.on("disconnect", () => {
