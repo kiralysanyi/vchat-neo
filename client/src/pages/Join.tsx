@@ -27,6 +27,8 @@ const Join = () => {
             if (res.status == 200) {
                 const info = await res.json();
                 setMeetingInfo(info)
+            } else {
+                navigate("/")
             }
         })
     }, [])
