@@ -70,7 +70,7 @@ const MeetingClient = () => {
 
     // 3. Handle Receiving Streams
     useEffect(() => {
-        if (!device) return;
+        if (!device || !connected) return;
 
         let getStreamFunc: any;
 
@@ -120,13 +120,13 @@ const MeetingClient = () => {
         socket.on("newProducer", onNewProducer);
 
         return () => { socket.off("newProducer", onNewProducer); };
-    }, [device]);
+    }, [device, connected]);
 
     const [transportId, setTransportId] = useState<string>()
 
     // 4. Setup Send Transport
     useEffect(() => {
-        if (!device) return;
+        if (!device || !connected) return;
 
         createSendTransport(socket, device, (transport) => {
             console.log("Send transport created");
@@ -136,7 +136,7 @@ const MeetingClient = () => {
 
             setSendStream(() => sendstream);
         });
-    }, [device]);
+    }, [device, connected]);
 
     // 5. Produce Local Streams (Camera/Mic)
 
