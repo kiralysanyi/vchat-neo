@@ -11,6 +11,7 @@ import consumerHandler from "./mediasoup/consumerHandler";
 import { ExtendedSocket } from "./types/ExtendedSocket";
 import cors from "cors";
 import { Meeting } from "./types/Meeting";
+import * as fs from "fs";
 
 const app = express();
 const server = http.createServer(app);
@@ -136,10 +137,14 @@ createWorker().then(async (worker) => {
 
     // handle non existent pages
 
+    // host client if available
+    if (fs.existsSync("./public")) {
+        console.log("Hosting client")
+        app.use(express.static("./public"))
+    }
+
     app.use((req, res) => {
-        res.status(404).json({
-            error: "Not found"
-        })
+        res.redirect("/")
     })
 
     server.listen(PORT, () => {

@@ -1,5 +1,7 @@
+console.log(import.meta.env)
+
 const config = {
-    serverUrl: "http://localhost:8080"
+    serverUrl: import.meta.env.DEV ? "http://localhost:8080" : ""
 }
 
 export default config;

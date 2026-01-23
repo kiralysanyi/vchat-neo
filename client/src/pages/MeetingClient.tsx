@@ -78,7 +78,7 @@ const MeetingClient = () => {
         const onNewProducer = async (transportId: string, payloadId: number) => {
             if (!getStreamFunc) return;
 
-            const stream = await getStreamFunc(transportId, payloadId, () => {
+            const {stream} = await getStreamFunc(transportId, payloadId, () => {
                 // On Close: Remove stream from participant
                 setParticipants(prev => {
                     const updated = { ...prev };
@@ -289,6 +289,7 @@ const MeetingClient = () => {
     const closeRef = useRef<{ closeVid: Function | undefined, closeAudio: Function | undefined }>({ closeVid: undefined, closeAudio: undefined })
 
     const viewStream = (p: Participant) => {
+        setStreamVolume(1)
         if (p.streaming == true && getStreamRef.current != undefined) {
             // get screen video
             getStreamRef.current(p.producerTransportId, 3, () => { }).then(({ stream, close }) => {
