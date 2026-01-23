@@ -10,6 +10,7 @@ import getRouterCapabilities from "../mediasoup/getRouterCapabilities";
 import type { Participant } from "../types/Participant";
 import StreamPlayer from "../components/StreamPlayer";
 import config from "../config";
+import getScreen from "../capture/getScreen";
 
 const MeetingClient = () => {
     const {
@@ -27,7 +28,10 @@ const MeetingClient = () => {
     const [participants, setParticipants] = useState<Record<string, Participant>>({});
     const [device, setDevice] = useState<Device | null>(null);
     const [sendStream, setSendStream] = useState<((stream: MediaStream, payloadId: number) => Promise<void>) | null>(null);
-    const [connected, setConnected] = useState(socket.connected)
+    const [connected, setConnected] = useState(socket.connected);
+    const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
+
+
     // 1. Navigation Guard
     useEffect(() => {
         if (connected) {
@@ -88,7 +92,7 @@ const MeetingClient = () => {
                     return { ...updated };
                 });
             });
-
+            console.log("Add consumer: ", transportId, payloadId)
             setParticipants(prev => {
                 const updated = { ...prev };
                 if (!updated[transportId]) return prev; // Guard against unknown participant
@@ -150,6 +154,28 @@ const MeetingClient = () => {
             })
         }
     }, [microphoneStream, sendStream]);
+
+    // produce screen stream
+    useEffect(() => {
+        if (screenStream && sendStream) {
+            const vid = screenStream.getVideoTracks()[0]
+            const audio = screenStream.getAudioTracks()[0]
+            console.log(vid, audio)
+            sendStream(new MediaStream([vid]), 3).then(() => {
+                console.log("Added screen video")
+                socket.emit("addstream", 3)
+                if (audio) {
+                    sendStream(new MediaStream([audio]), 4).then(() => {
+                        console.log("Added screen audio")
+
+                        socket.emit("addstream", 4)
+                    })
+                }
+            })
+
+
+        }
+    }, [screenStream, sendStream]);
 
     // 6. Participant Sync
     useEffect(() => {
@@ -232,27 +258,59 @@ const MeetingClient = () => {
         }
     };
 
+
+    const toggleScreen = async () => {
+        if (screenStream) {
+            screenStream.getTracks().forEach((track) => {
+                track.stop();
+                track.onended ? track.onended(new Event("ended")) : null
+            })
+            setScreenStream(null);
+        } else {
+            try {
+                const stream = await getScreen();
+                setScreenStream(stream)
+            } catch (e) {
+                console.error(e)
+            }
+        }
+    }
+
+    const [viewedParticipant, setViewedParticipant] = useState<Participant | null>(null);
+    const [streamVolume, setStreamVolume] = useState(1);
+
     return (
         <div className="page flex flex-col">
-            <div className="flex flex-row w-full h-full flex-wrap">
+            <div className="streams-container">
                 <div className="participant border p-2">
                     {cameraStream && <StreamPlayer stream={cameraStream} />}
-                    <span className="block font-bold">{nickname} (You)</span>
+                    <span className="name">{nickname} (You)</span>
                 </div>
                 {Object.values(participants).map(p => (
                     <div key={p.producerTransportId} className="participant border p-2">
                         {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
                         {p.microphoneStream && <StreamPlayer stream={p.microphoneStream} />}
-                        <span className="block">{p.nickname}</span>
+                        {p.screenStream && <span onClick={() => {
+                            setViewedParticipant(p)
+                        }} className="view">View</span>}
+                        <span className="name">{p.nickname}</span>
                     </div>
                 ))}
             </div>
-            <div className="flex flex-row gap-4 p-4 bg-gray-100">
+            {viewedParticipant && <div className="fixed top-0 left-0 w-full h-full bg-black z-10">
+                <button className="fixed top-0 right-0 z-10" onClick={() => { setViewedParticipant(null) }}>Close</button>
+                {viewedParticipant.screenStream && <StreamPlayer stream={viewedParticipant.screenStream} />}
+                {viewedParticipant.screenAudioStream && <StreamPlayer volume={streamVolume} stream={viewedParticipant.screenAudioStream} />}
+            </div>}
+            <div className="dock">
                 <button onClick={toggleCamera}>
                     {cameraStream ? "Disable Camera" : "Enable Camera"}
                 </button>
                 <button onClick={toggleMicrophone}>
                     {microphoneStream ? "Disable Microphone" : "Enable Microphone"}
+                </button>
+                <button onClick={toggleScreen}>
+                    {screenStream ? "Screenshare off" : "Screenshare on"}
                 </button>
                 <button onClick={() => {
                     navigate("/")

@@ -8,8 +8,10 @@ input {
   @apply border-2 border-blue-600 rounded-sm p-2 bg-blue-950 text-white outline-0;
 }
 
-button:hover, input:hover, input:focus {
-   @apply shadow-2xl shadow-blue-600 border-blue-400;
+button:hover,
+input:hover,
+input:focus {
+  @apply shadow-2xl shadow-blue-600 border-blue-400;
 }
 
 :root {
@@ -42,6 +44,29 @@ h1 {
   @apply w-full h-full;
 }
 
-.participant span {
+.name {
   @apply absolute bottom-2 left-2 p-2 border-2 border-gray-400 rounded-full backdrop-blur-2xl bg-black/20;
+}
+
+.view {
+  @apply absolute bottom-2 right-2 p-2 border-2 border-gray-400 rounded-full backdrop-blur-2xl bg-black/20 cursor-pointer;
+}
+
+.streams-container {
+  @apply flex flex-row w-full h-full flex-wrap;
+  padding-bottom: 5.5rem;
+  overflow-y: auto;
+}
+
+.dock {
+  @apply flex flex-row gap-4;
+  position: fixed;
+  bottom: 0px;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  width: auto;
+  height: 5rem;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
 }
