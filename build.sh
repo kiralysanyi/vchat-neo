@@ -1,9 +1,11 @@
 #/bin/bash
 rm -rf ./build
 cd ./client
+npm i
 npm run build
 cd ..
 cd ./server
+npm i
 npm run build
 cd ..
 cp -r ./server/dist ./build
