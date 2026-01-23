@@ -16,9 +16,12 @@ const Join = () => {
         setCameraStream,
         microphoneStream,
         setMicrophoneStream,
-        joined,
-        setJoined
+        setJoined,
+        nickname,
+        setNickname
     } = useContext(DataContext)
+
+    const [newNickname, setNewNickname] = useState("")
 
     useEffect(() => {
         fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json" } }).then(async (res) => {
@@ -30,6 +33,10 @@ const Join = () => {
     }, [])
 
     const join = () => {
+        if (setNickname) {
+            setNickname(newNickname)
+        }
+
         if (setJoined) {
             setJoined(true)
             navigate("/meeting/" + params.id)
@@ -85,6 +92,10 @@ const Join = () => {
                 <div className="flex flex-row gap-4">
                     <button onClick={toggleCamera}>{cameraStream ? "Disable Camera" : "Enable camera"}</button>
                     <button onClick={toggleMicrophone}>{microphoneStream ? "Disable Microphone" : "Enable Microphone"}</button>
+                </div>
+                <div className="form-group">
+                    <label htmlFor="nickname">Nickname</label>
+                    <input type="text" name="nickname" id="nickname" value={newNickname} onChange={(ev) => { setNewNickname(ev.target.value) }} />
                 </div>
                 <button onClick={join}>Join</button>
             </div>

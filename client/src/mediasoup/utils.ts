@@ -11,7 +11,7 @@ const closeAllTransport = () => {
     }
 }
 
-const createSendTransport = (socket: Socket, device: Device, onCreateTransport: (transport: Transport) => void): Promise<(stream: MediaStream, payloadId: number) => void> => {
+const createSendTransport = (socket: Socket, device: Device, onCreateTransport: (transport: Transport) => void): Promise<(stream: MediaStream, payloadId: number) => Promise<void>> => {
     return new Promise((resolve) => {
         socket.emit("createProducerTransport", {}, async (params: TransportOptions<AppData>) => {
             const transport = device.createSendTransport(params);

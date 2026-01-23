@@ -15,13 +15,13 @@ import { Meeting } from "./types/Meeting";
 const app = express();
 const server = http.createServer(app);
 
-const io = new Server(server, {cors: {origin: "*"}});
+const io = new Server(server, { cors: { origin: "*" } });
 
 const producerTransports: Record<string, ExtendedProducer> = {};
 
 const meetings: Record<string, Meeting> = {};
 
-app.use(cors({origin: "*"}))
+app.use(cors({ origin: "*" }))
 
 createWorker().then(async (worker) => {
     const router = await createRouter(worker)
@@ -37,6 +37,43 @@ createWorker().then(async (worker) => {
         consumerHandler(router, socket, producerTransports, (transportId, accept, deny) => {
             console.log(transportId)
             accept();
+        })
+
+        //meeting related stuff
+
+        socket.on("join", (meetingId: string, transportId: string, nickname) => {
+            if (meetings[meetingId] == undefined) {
+                console.error("Meeting not found: ", meetingId)
+                return;
+            }
+
+            const meeting = meetings[meetingId]
+
+            socket.emit("participants", meeting.participants)
+
+            meeting.participants[transportId] = {
+                nickname: nickname,
+                producerTransportId: transportId
+            }
+
+            socket.join(meeting.id);
+
+            socket.to(meeting.id).emit("newJoined", {
+                nickname: nickname,
+                producerTransportId: transportId
+            })
+
+            const onAddStream = (payloadId: string) => {
+                socket.to(meeting.id).emit("newProducer", transportId, payloadId)
+            }
+
+            socket.on("addstream", onAddStream)
+
+            socket.once("disconnect", () => {
+                socket.off("addstream", onAddStream)
+                socket.to(meeting.id).emit("participantLeft", transportId)
+                delete meeting.participants[transportId];
+            })
         })
 
         socket.on("disconnect", () => {

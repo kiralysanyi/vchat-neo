@@ -1,30 +1,200 @@
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { DataContext } from "../providers/DataProvider";
 import { useNavigate, useParams } from "react-router";
+import getCamera from "../capture/getCamera";
+import getMicrophone from "../capture/getMicrophone";
+import socket from "../socket";
+import { createRecvTransport, createSendTransport } from "../mediasoup/utils";
+import { Device } from "mediasoup-client";
+import getRouterCapabilities from "../mediasoup/getRouterCapabilities";
+import type { Participant } from "../types/Participant";
+import StreamPlayer from "../components/StreamPlayer";
 
 const MeetingClient = () => {
-    const { cameraStream, joined } = useContext(DataContext)
-    const videoRef = useRef<HTMLVideoElement | null>(null)
+    const {
+        cameraStream,
+        joined,
+        microphoneStream,
+        setMicrophoneStream,
+        setCameraStream,
+        nickname
+    } = useContext(DataContext);
+
     const navigate = useNavigate();
     const params = useParams();
 
+    const [participants, setParticipants] = useState<Record<string, Participant>>({});
+    const [device, setDevice] = useState<Device | null>(null);
+    const [sendStream, setSendStream] = useState<((stream: MediaStream, payloadId: number) => Promise<void>) | null>(null);
+
+    // 1. Navigation Guard
     useEffect(() => {
         if (!joined) {
-            navigate("/meeting/join/" + params.id)
+            navigate("/meeting/join/" + params.id);
         }
-    })
+    }, [joined, navigate, params.id]);
+
+    // 2. Setup Device (Run once)
+    useEffect(() => {
+        let isMounted = true;
+        const dev = new Device();
+
+        getRouterCapabilities().then(async (capabilities) => {
+            if (!isMounted) return;
+            await dev.load({ routerRtpCapabilities: capabilities });
+            setDevice(dev);
+        }).catch(console.error);
+
+        return () => { isMounted = false; };
+    }, []);
+
+    // 3. Handle Receiving Streams
+    useEffect(() => {
+        if (!device) return;
+
+        let getStreamFunc: any;
+
+        createRecvTransport(socket, device).then((getstream) => {
+            getStreamFunc = getstream;
+            socket.emit("consumeReady");
+        });
+
+        const onNewProducer = async (transportId: string, payloadId: number) => {
+            if (!getStreamFunc) return;
+
+            const stream = await getStreamFunc(transportId, payloadId, () => {
+                // On Close: Remove stream from participant
+                setParticipants(prev => {
+                    const updated = { ...prev };
+                    if (!updated[transportId]) return prev; // Guard against unknown participant
+
+                    // Map payload IDs to specific stream properties
+                    if (payloadId === 1) updated[transportId].cameraStream = undefined;
+                    if (payloadId === 2) updated[transportId].microphoneStream = undefined;
+                    if (payloadId === 3) updated[transportId].screenStream = undefined;
+                    if (payloadId === 4) updated[transportId].screenAudioStream = undefined;
+
+                    return { ...updated };
+                });
+            });
+
+            setParticipants(prev => {
+                const updated = { ...prev };
+                if (!updated[transportId]) return prev; // Guard against unknown participant
+
+                // Map payload IDs to specific stream properties
+                if (payloadId === 1) updated[transportId].cameraStream = stream;
+                if (payloadId === 2) updated[transportId].microphoneStream = stream;
+                if (payloadId === 3) updated[transportId].screenStream = stream;
+                if (payloadId === 4) updated[transportId].screenAudioStream = stream;
+
+                return { ...updated };
+            });
+        };
+
+        socket.on("newProducer", onNewProducer);
+        return () => { socket.off("newProducer", onNewProducer); };
+    }, [device]);
+
+    const [transportId, setTransportId] = useState<string>()
+
+    // 4. Setup Send Transport
+    useEffect(() => {
+        if (!device) return;
+
+        createSendTransport(socket, device, (transport) => {
+            console.log("Send transport created");
+            setTransportId(transport.id)
+        }).then((sendstream) => {
+
+            setSendStream(() => sendstream);
+        });
+    }, [device]);
+
+    // 5. Produce Local Streams (Camera/Mic)
+    useEffect(() => {
+        if (cameraStream && sendStream) {
+            sendStream(cameraStream, 1).then(() => {
+                socket.emit("addstream", 1)
+            })
+        }
+    }, [cameraStream, sendStream]);
 
     useEffect(() => {
-        if (cameraStream) {
-            if (videoRef.current) {
-                videoRef.current.srcObject = cameraStream;
-            }
+        if (microphoneStream && sendStream) {
+            sendStream(microphoneStream, 2).then(() => {
+                socket.emit("addstream", 2)
+            })
         }
-    }, [cameraStream])
+    }, [microphoneStream, sendStream]);
 
-    return <div className="page">
-        <video ref={videoRef} autoPlay></video>
-    </div>
-}
+    // 6. Participant Sync
+    useEffect(() => {
+        if (!transportId) {
+            return;
+        }
+        socket.on("participants", (data: Record<string, Participant>) => setParticipants(data));
+        socket.on("newJoined", (data: Participant) => {
+            setParticipants(prev => ({ ...prev, [data.producerTransportId]: data }));
+        });
+
+        socket.emit("join", params.id, transportId, nickname);
+
+        return () => {
+            socket.off("participants");
+            socket.off("newJoined");
+        };
+    }, [params.id, transportId]);
+
+    // UI Handlers
+    const toggleCamera = async () => {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            setCameraStream?.(null);
+        } else {
+            try {
+                const stream = await getCamera();
+                setCameraStream?.(stream);
+            } catch (e) { console.error(e); }
+        }
+    };
+
+    const toggleMicrophone = async () => {
+        if (microphoneStream) {
+            microphoneStream.getTracks().forEach(track => track.stop());
+            setMicrophoneStream?.(null);
+        } else {
+            try {
+                const stream = await getMicrophone();
+                setMicrophoneStream?.(stream);
+            } catch (e) { console.error(e); }
+        }
+    };
+
+    return (
+        <div className="page flex flex-col">
+            <div className="flex flex-row w-full h-full flex-wrap">
+                <div className="participant border p-2">
+                    {cameraStream && <StreamPlayer stream={cameraStream} />}
+                    <span className="block font-bold">{nickname} (You)</span>
+                </div>
+                {Object.values(participants).map(p => (
+                    <div key={p.producerTransportId} className="participant border p-2">
+                        {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
+                        <span className="block">{p.nickname}</span>
+                    </div>
+                ))}
+            </div>
+            <div className="flex flex-row gap-4 p-4 bg-gray-100">
+                <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={toggleCamera}>
+                    {cameraStream ? "Disable Camera" : "Enable Camera"}
+                </button>
+                <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={toggleMicrophone}>
+                    {microphoneStream ? "Disable Microphone" : "Enable Microphone"}
+                </button>
+            </div>
+        </div>
+    );
+};
 
 export default MeetingClient;
