@@ -211,6 +211,7 @@ const MeetingClient = () => {
                 {Object.values(participants).map(p => (
                     <div key={p.producerTransportId} className="participant border p-2">
                         {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
+                        {p.microphoneStream && <StreamPlayer stream={p.microphoneStream} />}
                         <span className="block">{p.nickname}</span>
                     </div>
                 ))}
