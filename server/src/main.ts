@@ -33,6 +33,59 @@ createWorker().then(async (worker) => {
             socket.on("disconnect", () => {
                 delete producerTransports[transportId];
             })
+        }, (transportId, payloadId) => {
+            // new stream
+            if (socket.meetid) {
+                if (meetings[socket.meetid]) {
+                    switch (payloadId) {
+                        case 1:
+                            meetings[socket.meetid].participants[transportId].audio = true;
+                            break;
+
+                        case 2:
+                            meetings[socket.meetid].participants[transportId].video = true;
+                            break;
+
+                        case 3:
+                            meetings[socket.meetid].participants[transportId].sVideo = true;
+                            break;
+
+                        case 4:
+                            meetings[socket.meetid].participants[transportId].sAudio = true;
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
+        }, (transportId: string, payloadId: number) => {
+            // stream removed
+
+            if (socket.meetid) {
+                if (meetings[socket.meetid] && meetings[socket.meetid].participants[transportId]) {
+                    switch (payloadId) {
+                        case 1:
+                            meetings[socket.meetid].participants[transportId].audio = false;
+                            break;
+
+                        case 2:
+                            meetings[socket.meetid].participants[transportId].video = false;
+                            break;
+
+                        case 3:
+                            meetings[socket.meetid].participants[transportId].sVideo = false;
+                            break;
+
+                        case 4:
+                            meetings[socket.meetid].participants[transportId].sAudio = false;
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
         });
 
         consumerHandler(router, socket, producerTransports, (transportId, accept, deny) => {
@@ -48,6 +101,8 @@ createWorker().then(async (worker) => {
                 return;
             }
 
+            socket.meetid = meetingId;
+
             socket.join(meetings[meetingId].id);
 
             socket.to(meetings[meetingId].id).emit("newJoined", {
@@ -55,7 +110,27 @@ createWorker().then(async (worker) => {
                 producerTransportId: transportId
             })
 
-            const onAddStream = (payloadId: string) => {
+            const onAddStream = (payloadId: number) => {
+                switch (payloadId) {
+                    case 1:
+                        meetings[meetingId].participants[transportId].audio = true;
+                        break;
+
+                    case 2:
+                        meetings[meetingId].participants[transportId].video = true;
+                        break;
+
+                    case 3:
+                        meetings[meetingId].participants[transportId].sVideo = true;
+                        break;
+
+                    case 4:
+                        meetings[meetingId].participants[transportId].sAudio = true;
+                        break;
+
+                    default:
+                        break;
+                }
                 socket.to(meetings[meetingId].id).emit("newProducer", transportId, payloadId)
             }
 
@@ -68,14 +143,25 @@ createWorker().then(async (worker) => {
             }
 
             socket.once("consumeReady", () => {
-                socket.emit("initialConsume", meetings[meetingId].participants)
+                if (meetings[meetingId]) {
+                    for (let i in meetings[meetingId].participants) {
+                        meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);
+                        meetings[meetingId].participants[i].video && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 2);
+                        meetings[meetingId].participants[i].sVideo && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 3);
+                        meetings[meetingId].participants[i].sAudio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 4);
+                    }
+                }
             })
 
             socket.emit("participants", meetings[meetingId].participants)
 
             meetings[meetingId].participants[transportId] = {
                 nickname: nickname,
-                producerTransportId: transportId
+                producerTransportId: transportId,
+                audio: false,
+                video: false,
+                sAudio: false,
+                sVideo: false
             }
 
             socket.once("disconnect", onLeave)

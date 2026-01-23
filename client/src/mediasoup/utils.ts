@@ -13,6 +13,7 @@ const closeAllTransport = () => {
 
 const createSendTransport = (socket: Socket, device: Device, onCreateTransport: (transport: Transport) => void): Promise<(stream: MediaStream, payloadId: number) => Promise<void>> => {
     return new Promise((resolve) => {
+        let sending = false;
         socket.emit("createProducerTransport", {}, async (params: TransportOptions<AppData>) => {
             const transport = device.createSendTransport(params);
             transports[transport.id] = transport;
@@ -24,28 +25,47 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
 
             // return addStream function
             resolve(async (stream, payloadId) => {
-                transport.once("produce", ({ kind, rtpParameters }, cb) => {
-                    socket.emit("produce", { kind, rtpParameters, payloadId }, cb);
-                });
+                return new Promise((done) => {
+                    const send = async () => {
+                        // if currently sending, return and try again later
+                        if (sending == true) {
+                            return setTimeout(() => {
+                                send()
+                            }, 200);
+                        }
 
-                const track = stream.getTracks()[0];
+                        sending = true;
+                        transport.once("produce", ({ kind, rtpParameters }, cb) => {
+                            socket.emit("produce", { kind, rtpParameters, payloadId }, cb);
+                        });
 
-                const producer = await transport.produce({
-                    track: track
+                        const track = stream.getTracks()[0];
+
+                        const producer = await transport.produce({
+                            track: track
+                        })
+
+                        // if track ended, close the producer
+                        track.onended = () => {
+                            console.log("Stream ended, closing producer");
+                            producer.close();
+                            socket.emit("pclose", transport.id, payloadId);
+                        }
+
+                        sending = false;
+
+                        // stream sent, task resolved
+                        done();
+                    }
+
+                    send();
                 })
-
-                // if track ended, close the producer
-                track.onended = () => {
-                    console.log("Stream ended, closing producer");
-                    producer.close();
-                    socket.emit("pclose", transport.id, payloadId);
-                }
             });
         })
     });
 }
 
-const createRecvTransport = (socket: Socket, device: Device, onCreateTransport : (transport: Transport) => void): Promise<(transportId: string, payloadId: number, onClose: Function) => Promise<{stream: MediaStream, close: Function}>> => {
+const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: (transport: Transport) => void): Promise<(transportId: string, payloadId: number, onClose: Function) => Promise<{ stream: MediaStream, close: Function }>> => {
     return new Promise((resolve) => {
         socket.emit("createConsumerTransport", {}, (params: TransportOptions<AppData>) => {
             console.log("Creating transport")
@@ -74,7 +94,7 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport :
             resolve((transportId: string, payloadId: number, onClose: Function) => {
                 return new Promise((resolveStream) => {
                     console.log("Consume stream:", transportId, payloadId)
-                    
+
                     socket.emit("consume", { rtpCapabilities: device.rtpCapabilities, payloadId, transportId },
                         async (data: { error: any; id: string; producerId: string; kind: MediaKind; rtpParameters: RtpParameters; }) => {
                             if (data.error) {
@@ -97,9 +117,11 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport :
                                 onClose();
                             })
 
-                            resolveStream({stream: new MediaStream([consumer.track]), close: () => {
-                                consumer.close();
-                            }})
+                            resolveStream({
+                                stream: new MediaStream([consumer.track]), close: () => {
+                                    consumer.close();
+                                }
+                            })
                         });
                 })
             })
