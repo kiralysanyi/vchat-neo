@@ -1,6 +1,18 @@
-const getMicrophone = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({audio: true, video: false})
-    return stream;
+const getMicrophone = async (): Promise<MediaStream | null> => {
+    return new Promise((resolve) => {
+        navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: true,
+                autoGainControl: true,
+                noiseSuppression: true
+            }, video: false
+        }).then((stream) => {
+            resolve(stream)
+        }).catch(() => {
+            resolve(null)
+        })
+    })
+
 }
 
 export default getMicrophone;
