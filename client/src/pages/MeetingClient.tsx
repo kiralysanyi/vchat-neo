@@ -297,7 +297,7 @@ const MeetingClient = () => {
                     </div>
                 ))}
             </div>
-            {viewedParticipant && <div className="fixed top-0 left-0 w-full h-full bg-black z-10">
+            {viewedParticipant && <div className="screenviewer">
                 <button className="fixed top-0 right-0 z-10" onClick={() => { setViewedParticipant(null) }}>Close</button>
                 {viewedParticipant.screenStream && <StreamPlayer stream={viewedParticipant.screenStream} />}
                 {viewedParticipant.screenAudioStream && <StreamPlayer volume={streamVolume} stream={viewedParticipant.screenAudioStream} />}
