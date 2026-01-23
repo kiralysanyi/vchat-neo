@@ -45,7 +45,7 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
     });
 }
 
-const createRecvTransport = (socket: Socket, device: Device): Promise<(transportId: string, payloadId: number, onClose: Function) => Promise<MediaStream>> => {
+const createRecvTransport = (socket: Socket, device: Device): Promise<(transportId: string, payloadId: number, onClose: Function) => Promise<{stream: MediaStream, close: Function}>> => {
     return new Promise((resolve) => {
         socket.emit("createConsumerTransport", {}, (params: TransportOptions<AppData>) => {
             console.log("Creating transport")
@@ -96,7 +96,9 @@ const createRecvTransport = (socket: Socket, device: Device): Promise<(transport
                                 onClose();
                             })
 
-                            resolveStream(new MediaStream([consumer.track]))
+                            resolveStream({stream: new MediaStream([consumer.track]), close: () => {
+                                consumer.close();
+                            }})
                         });
                 })
             })

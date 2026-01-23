@@ -5,7 +5,8 @@ interface Participant {
     microphoneStream?: MediaStream,
     screenStream?: MediaStream,
     screenAudioStream?: MediaStream,
-    self?: boolean
+    self?: boolean,
+    streaming?: boolean
 }
 
 export type { Participant };

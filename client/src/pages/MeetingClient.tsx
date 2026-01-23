@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { DataContext } from "../providers/DataProvider";
 import { useNavigate, useParams } from "react-router";
 import getCamera from "../capture/getCamera";
@@ -29,8 +29,8 @@ const MeetingClient = () => {
     const [device, setDevice] = useState<Device | null>(null);
     const [sendStream, setSendStream] = useState<((stream: MediaStream, payloadId: number) => Promise<void>) | null>(null);
     const [connected, setConnected] = useState(socket.connected);
-    const [screenStream, setScreenStream] = useState<MediaStream | null>(null)
-
+    const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
+    const getStreamRef = useRef<(transportId: string, payloadId: number, onClose: Function) => Promise<{ stream: MediaStream, close: Function }>>(undefined)
 
     // 1. Navigation Guard
     useEffect(() => {
@@ -71,6 +71,7 @@ const MeetingClient = () => {
 
         createRecvTransport(socket, device).then((getstream) => {
             getStreamFunc = getstream;
+            getStreamRef.current = getstream;
             socket.emit("consumeReady");
         });
 
@@ -86,6 +87,7 @@ const MeetingClient = () => {
                     // Map payload IDs to specific stream properties
                     if (payloadId === 1) updated[transportId].cameraStream = undefined;
                     if (payloadId === 2) updated[transportId].microphoneStream = undefined;
+                    if (payloadId === 3) updated[transportId].streaming = false;
                     if (payloadId === 3) updated[transportId].screenStream = undefined;
                     if (payloadId === 4) updated[transportId].screenAudioStream = undefined;
 
@@ -100,8 +102,9 @@ const MeetingClient = () => {
                 // Map payload IDs to specific stream properties
                 if (payloadId === 1) updated[transportId].cameraStream = stream;
                 if (payloadId === 2) updated[transportId].microphoneStream = stream;
-                if (payloadId === 3) updated[transportId].screenStream = stream;
-                if (payloadId === 4) updated[transportId].screenAudioStream = stream;
+                // Only report that screenshare available
+                if (payloadId === 3) updated[transportId].streaming = true;
+                //if (payloadId === 4) updated[transportId].screenAudioStream = stream;
 
                 return { ...updated };
             });
@@ -115,7 +118,7 @@ const MeetingClient = () => {
                 onNewProducer(data[i].producerTransportId, 1).catch(() => console.log("No stream on ch 1"))
                 onNewProducer(data[i].producerTransportId, 2).catch(() => console.log("No stream on ch 2"))
                 onNewProducer(data[i].producerTransportId, 3).catch(() => console.log("No stream on ch 3"))
-                onNewProducer(data[i].producerTransportId, 4).catch(() => console.log("No stream on ch 4"))
+                //onNewProducer(data[i].producerTransportId, 4).catch(() => console.log("No stream on ch 4"))
 
             }
         })
@@ -283,6 +286,41 @@ const MeetingClient = () => {
 
     const [viewedParticipant, setViewedParticipant] = useState<Participant | null>(null);
     const [streamVolume, setStreamVolume] = useState(1);
+    const closeRef = useRef<{ closeVid: Function | undefined, closeAudio: Function | undefined }>({ closeVid: undefined, closeAudio: undefined })
+
+    const viewStream = (p: Participant) => {
+        if (p.streaming == true && getStreamRef.current != undefined) {
+            // get screen video
+            getStreamRef.current(p.producerTransportId, 3, () => { }).then(({ stream, close }) => {
+                closeRef.current.closeVid = close
+                setParticipants(prev => {
+                    const updated = { ...prev };
+                    if (!updated[p.producerTransportId]) return prev; // Guard against unknown participant
+
+                    updated[p.producerTransportId].screenStream = stream
+
+                    return { ...updated };
+                });
+                setViewedParticipant(p)
+            })
+
+            // get screen audio
+
+            getStreamRef.current(p.producerTransportId, 4, () => { }).then(({ stream, close }) => {
+                closeRef.current.closeAudio = close
+                setParticipants(prev => {
+                    const updated = { ...prev };
+                    if (!updated[p.producerTransportId]) return prev; // Guard against unknown participant
+
+                    updated[p.producerTransportId].screenAudioStream = stream
+
+                    return { ...updated };
+                });
+                setViewedParticipant(p)
+            })
+        }
+    }
+
 
     return (
         <div className="page flex flex-col">
@@ -295,15 +333,23 @@ const MeetingClient = () => {
                     <div key={p.producerTransportId} className="participant border p-2">
                         {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
                         {p.microphoneStream && <StreamPlayer stream={p.microphoneStream} />}
-                        {p.screenStream && <span onClick={() => {
-                            setViewedParticipant(p)
+                        {p.streaming && <span onClick={() => {
+                            viewStream(p)
                         }} className="view">View</span>}
                         <span className="name">{p.nickname}</span>
                     </div>
                 ))}
             </div>
             {viewedParticipant && <div className="screenviewer">
-                <button className="fixed top-0 right-0 z-10" onClick={() => { setViewedParticipant(null) }}>Close</button>
+                <button className="fixed top-0 right-0 z-10" onClick={() => {
+                    setViewedParticipant(null)
+                    if (closeRef.current.closeVid) {
+                        closeRef.current.closeVid()
+                    }
+                    if (closeRef.current.closeAudio) {
+                        closeRef.current.closeAudio()
+                    }
+                }}>Close</button>
                 {viewedParticipant.screenStream && <StreamPlayer stream={viewedParticipant.screenStream} />}
                 {viewedParticipant.screenAudioStream && <StreamPlayer volume={streamVolume} stream={viewedParticipant.screenAudioStream} />}
             </div>}
