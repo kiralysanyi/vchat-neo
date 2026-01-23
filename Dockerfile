@@ -2,10 +2,10 @@ FROM node:24-slim
 
 WORKDIR /
 
-COPY build/package*.json ./
+COPY package*.json ./
 
 RUN npm install --production
 
-COPY build/ .
+COPY . .
 
 CMD ["node", "main.js"]

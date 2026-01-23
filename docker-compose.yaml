@@ -1,0 +1,13 @@
+name: screenshare
+
+services:
+  server:
+    container_name: vchat-neo
+    image: ghcr.io/kiralysanyi/vchat-neo:testing
+    network_mode: host 
+    restart: unless-stopped
+    healthcheck:
+      disable: false
+    environment:
+      - LISTEN_IPS=127.0.0.1,192.168.1.165 # ips to announce for clients (should be accessable from all clients, or else you will get blank video)
+      - PORT=8080
