@@ -269,6 +269,11 @@ const MeetingClient = () => {
         } else {
             try {
                 const stream = await getScreen();
+                if (stream) {
+                    stream.getVideoTracks()[0].addEventListener("ended", () => {
+                        setScreenStream(null)
+                    })
+                }
                 setScreenStream(stream)
             } catch (e) {
                 console.error(e)

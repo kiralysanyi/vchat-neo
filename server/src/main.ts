@@ -47,32 +47,34 @@ createWorker().then(async (worker) => {
                 return;
             }
 
-            const meeting = meetings[meetingId]
+            socket.join(meetings[meetingId].id);
 
-            socket.emit("participants", meeting.participants)
-
-            meeting.participants[transportId] = {
-                nickname: nickname,
-                producerTransportId: transportId
-            }
-
-            socket.join(meeting.id);
-
-            socket.to(meeting.id).emit("newJoined", {
+            socket.to(meetings[meetingId].id).emit("newJoined", {
                 nickname: nickname,
                 producerTransportId: transportId
             })
 
             const onAddStream = (payloadId: string) => {
-                socket.to(meeting.id).emit("newProducer", transportId, payloadId)
+                socket.to(meetings[meetingId].id).emit("newProducer", transportId, payloadId)
             }
 
             socket.on("addstream", onAddStream)
 
             const onLeave = () => {
                 socket.off("addstream", onAddStream)
-                socket.to(meeting.id).emit("participantLeft", transportId)
-                delete meeting.participants[transportId];
+                socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
+                delete meetings[meetingId].participants[transportId];
+            }
+
+            socket.once("consumeReady", () => {
+                socket.emit("participants", meetings[meetingId].participants)
+            })
+
+            socket.emit("participants", meetings[meetingId].participants)
+
+            meetings[meetingId].participants[transportId] = {
+                nickname: nickname,
+                producerTransportId: transportId
             }
 
             socket.once("disconnect", onLeave)
