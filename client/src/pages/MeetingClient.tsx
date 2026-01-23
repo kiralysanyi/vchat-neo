@@ -9,6 +9,7 @@ import { Device } from "mediasoup-client";
 import getRouterCapabilities from "../mediasoup/getRouterCapabilities";
 import type { Participant } from "../types/Participant";
 import StreamPlayer from "../components/StreamPlayer";
+import config from "../config";
 
 const MeetingClient = () => {
     const {
@@ -26,15 +27,25 @@ const MeetingClient = () => {
     const [participants, setParticipants] = useState<Record<string, Participant>>({});
     const [device, setDevice] = useState<Device | null>(null);
     const [sendStream, setSendStream] = useState<((stream: MediaStream, payloadId: number) => Promise<void>) | null>(null);
-
+    const [connected, setConnected] = useState(socket.connected)
     // 1. Navigation Guard
     useEffect(() => {
+        if (connected) {
+            fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json" } }).then(async (res) => {
+                if (res.status != 200) {
+                    console.error("Meeting does not exist")
+                    navigate("/")
+                }
+            })
+        }
+
         if (!joined) {
             navigate("/meeting/join/" + params.id);
         }
-    }, [joined, navigate, params.id]);
 
-    // 2. Setup Device (Run once)
+    }, [joined, navigate, params.id, connected]);
+
+    // 2. Setup Device
     useEffect(() => {
         let isMounted = true;
         const dev = new Device();
@@ -142,7 +153,7 @@ const MeetingClient = () => {
 
     // 6. Participant Sync
     useEffect(() => {
-        if (!transportId) {
+        if (!transportId && !connected) {
             return;
         }
 
@@ -162,12 +173,32 @@ const MeetingClient = () => {
         socket.emit("join", params.id, transportId, nickname);
 
         return () => {
-            socket.off("participantLeft", onLeft)
+            socket.off("participantLeft", onLeft);
             socket.off("participants");
             socket.off("newJoined");
             socket.emit("leave");
         };
-    }, [params.id, transportId]);
+    }, [params.id, transportId, connected]);
+
+    // handle disconnect
+    useEffect(() => {
+        const onDisconnect = () => {
+            setConnected(false);
+            setParticipants({});
+        }
+
+        const onConnect = () => {
+            setConnected(true);
+        }
+
+        socket.on("connect", onConnect)
+
+        socket.on("disconnect", onDisconnect)
+
+        return () => {
+            socket.off("disconnect", onDisconnect)
+        }
+    }, [])
 
     // UI Handlers
     const toggleCamera = async () => {
@@ -217,12 +248,15 @@ const MeetingClient = () => {
                 ))}
             </div>
             <div className="flex flex-row gap-4 p-4 bg-gray-100">
-                <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={toggleCamera}>
+                <button onClick={toggleCamera}>
                     {cameraStream ? "Disable Camera" : "Enable Camera"}
                 </button>
-                <button className="px-4 py-2 bg-blue-500 text-white rounded" onClick={toggleMicrophone}>
+                <button onClick={toggleMicrophone}>
                     {microphoneStream ? "Disable Microphone" : "Enable Microphone"}
                 </button>
+                <button onClick={() => {
+                    navigate("/")
+                }}>Leave</button>
             </div>
         </div>
     );
