@@ -119,17 +119,6 @@ const MeetingClient = () => {
 
         socket.on("newProducer", onNewProducer);
 
-        // start consume streams at join
-        socket.once("initialConsume", (data: Record<string, Participant>) => {
-            for (let i in data) {
-                onNewProducer(data[i].producerTransportId, 1).catch(() => console.log("No stream on ch 1"))
-                onNewProducer(data[i].producerTransportId, 2).catch(() => console.log("No stream on ch 2"))
-                onNewProducer(data[i].producerTransportId, 3).catch(() => console.log("No stream on ch 3"))
-                //onNewProducer(data[i].producerTransportId, 4).catch(() => console.log("No stream on ch 4"))
-
-            }
-        })
-
         return () => { socket.off("newProducer", onNewProducer); };
     }, [device]);
 
@@ -150,21 +139,24 @@ const MeetingClient = () => {
     }, [device]);
 
     // 5. Produce Local Streams (Camera/Mic)
+
     useEffect(() => {
-        if (cameraStream && sendStream) {
+        if (cameraStream && sendStream && sendTransportRef.current) {
             sendStream(cameraStream, 1).then(() => {
+                console.log("Sending camera stream")
                 socket.emit("addstream", 1)
             })
         }
-    }, [cameraStream, sendStream]);
+    }, [cameraStream, sendStream, sendTransportRef.current]);
 
     useEffect(() => {
-        if (microphoneStream && sendStream) {
+        if (microphoneStream && sendStream && sendTransportRef.current) {
             sendStream(microphoneStream, 2).then(() => {
+                console.log("Sending microphone stream")
                 socket.emit("addstream", 2)
             })
         }
-    }, [microphoneStream, sendStream]);
+    }, [microphoneStream, sendStream, sendTransportRef.current]);
 
     // produce screen stream
     useEffect(() => {

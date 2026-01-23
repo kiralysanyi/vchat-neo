@@ -8,7 +8,9 @@ const producerHandler = (
     router: Router,
     socket: ExtendedSocket,
     producers: Record<string, ExtendedProducer>,
-    onCreate?: (transportId: string) => void
+    onCreate?: (transportId: string) => void,
+    onProduce?: (transportId: string, payloadId: number) => void,
+    onProducerClose?: (transportId: string, payloadId: number) => void
 ): void => {
 
     let transport: Transport | null = null;
@@ -61,8 +63,11 @@ const producerHandler = (
                 delete producers[transport!.id].producers[payloadId];
             });
 
+            onProduce && onProduce(transport.id, payloadId)
+
             cb({ id: producer.id });
         } catch (error: any) {
+            console.error("Produce error: ", error)
             cb({ error: error.message });
         }
     };
@@ -70,6 +75,7 @@ const producerHandler = (
     const onPclose = (transportId: string, payloadId: number) => {
         if (producers[transportId].producers[payloadId]) {
             producers[transportId].producers[payloadId].close()
+            onProducerClose && onProducerClose(transportId, payloadId)
             delete producers[transportId].producers[payloadId];
             console.log("Closed producer: ", transportId, payloadId)
         }
