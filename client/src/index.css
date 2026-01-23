@@ -14,6 +14,10 @@ input:focus {
   @apply shadow-2xl shadow-blue-600 border-blue-400;
 }
 
+.btn-red {
+  @apply border-red-600 bg-red-800 hover:shadow-2xl hover:shadow-red-600 hover:border-red-400;
+}
+
 :root {
   @apply bg-zinc-900 text-white;
   font-family: Arial, Helvetica, sans-serif;

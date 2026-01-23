@@ -12,6 +12,7 @@ import StreamPlayer from "../components/StreamPlayer";
 import config from "../config";
 import getScreen from "../capture/getScreen";
 import type { Transport } from "mediasoup-client/types";
+import { CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
 
 const MeetingClient = () => {
     const {
@@ -367,13 +368,15 @@ const MeetingClient = () => {
                         {p.microphoneStream && <StreamPlayer stream={p.microphoneStream} />}
                         {p.streaming && <span onClick={() => {
                             viewStream(p)
-                        }} className="view">View</span>}
+                        }} className="view">
+                            <ComputerDesktopIcon width={32} height={32} />
+                        </span>}
                         <span className="name">{p.nickname}</span>
                     </div>
                 ))}
             </div>
             {viewedParticipant && <div className="screenviewer">
-                <button className="fixed top-0 right-0 z-10" onClick={() => {
+                <button className="fixed top-0 right-0 z-10 opacity-25" onClick={() => {
                     setViewedParticipant(null)
                     if (closeRef.current.closeVid) {
                         closeRef.current.closeVid()
@@ -381,23 +384,27 @@ const MeetingClient = () => {
                     if (closeRef.current.closeAudio) {
                         closeRef.current.closeAudio()
                     }
-                }}>Close</button>
+                }}>
+                    <XCircleIcon width={32} height={32} />
+                </button>
                 {viewedParticipant.screenStream && <StreamPlayer stream={viewedParticipant.screenStream} />}
                 {viewedParticipant.screenAudioStream && <StreamPlayer volume={streamVolume} stream={viewedParticipant.screenAudioStream} />}
             </div>}
             <div className="dock">
-                <button onClick={toggleCamera}>
-                    {cameraStream ? "Disable Camera" : "Enable Camera"}
+                <button className={cameraStream ? "btn-red" : ""} onClick={toggleCamera}>
+                    <CameraIcon width={32} height={32} />
                 </button>
-                <button onClick={toggleMicrophone}>
-                    {microphoneStream ? "Disable Microphone" : "Enable Microphone"}
+                <button className={microphoneStream ? "btn-red" : ""} onClick={toggleMicrophone}>
+                    <MicrophoneIcon width={32} height={32} />
                 </button>
-                <button onClick={toggleScreen}>
-                    {screenStream ? "Screenshare off" : "Screenshare on"}
+                <button className={screenStream ? "btn-red" : ""} onClick={toggleScreen}>
+                    <ComputerDesktopIcon width={32} height={32} />
                 </button>
-                <button onClick={() => {
+                <button className="btn-red" onClick={() => {
                     navigate("/")
-                }}>Leave</button>
+                }}>
+                    <PhoneArrowDownLeftIcon width={32} height={32} />
+                </button>
             </div>
         </div>
     );
