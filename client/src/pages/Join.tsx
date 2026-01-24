@@ -25,13 +25,16 @@ const Join = () => {
     const [hasAudio, setHasAudio] = useState(false);
     const [hasVideo, setHasVideo] = useState(false);
 
+    const [newMeet, setNewMeet] = useState(false);
+    const [password, setPassword] = useState("")
+
     useEffect(() => {
         fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json" } }).then(async (res) => {
             if (res.status == 200) {
                 const info = await res.json();
                 setMeetingInfo(info)
             } else {
-                navigate("/")
+                setNewMeet(true);
             }
         })
 
@@ -46,13 +49,39 @@ const Join = () => {
     }, [])
 
     const join = () => {
-        if (setNickname) {
-            setNickname(newNickname)
-        }
+        if (newMeet) {
+            const body: Record<string, string> = {}
+            if (password.length > 0) {
+                body.password = password;
+            }
+            fetch(config.serverUrl + "/api/meeting/" + params.id, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            }).then(async (res) => {
+                if (res.status == 201) {
+                    //created
+                    if (setNickname) {
+                        setNickname(newNickname)
+                    }
 
-        if (setJoined) {
-            setJoined(true)
-            navigate("/meeting/" + params.id)
+                    if (setJoined) {
+                        setJoined(true)
+                        navigate("/meeting/" + params.id)
+                    }
+                } else {
+                    console.error("Failed to create room")
+                }
+            })
+        } else {
+            if (setNickname) {
+                setNickname(newNickname)
+            }
+
+            if (setJoined) {
+                setJoined(true)
+                navigate("/meeting/" + params.id)
+            }
         }
     }
 
@@ -110,6 +139,10 @@ const Join = () => {
                     <label htmlFor="nickname">Nickname</label>
                     <input type="text" name="nickname" id="nickname" value={newNickname} onChange={(ev) => { setNewNickname(ev.target.value) }} />
                 </div>
+                {newMeet && <div className="form-group">
+                    <label htmlFor="password">Set password (leave empty for none)</label>
+                    <input value={password} onChange={(ev) => setPassword(ev.target.value)} autoComplete="disabled" type="password" id="password" name="password" placeholder="Password" />
+                </div>}
                 <button onClick={join}>Join</button>
             </div>
             <video ref={videoRef} autoPlay className="bg-black" width={400} height={300}></video>

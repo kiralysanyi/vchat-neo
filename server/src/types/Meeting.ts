@@ -7,7 +7,8 @@ interface Meeting {
     participants: Record<string, Participant>,
     description?: string,
     router: Router,
-    producerTransports: Record<string, ExtendedProducer>
+    producerTransports: Record<string, ExtendedProducer>,
+    password?: string
 }
 
 export type { Meeting }

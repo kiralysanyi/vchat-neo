@@ -42,6 +42,61 @@ const useClient = () => {
 
     const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
 
+    const [password, setPassword] = useState("");
+    const [passError, setPassError] = useState<string>();
+    const [authenticated, setAuthenticated] = useState(false);
+
+    const [initialized, setInitialized] = useState(false);
+
+    // handle auth
+    const authenticate = () => {
+        socket.emit("prepare", params.id, password)
+    }
+
+    useEffect(() => {
+        const onAuthNeeded = () => {
+            if (password.length > 0) {
+                authenticate();
+            } else {
+                setPassError("Password required to join")
+            }
+        }
+
+        const onWrongPass = () => {
+            setPassError("Wrong password")
+        }
+
+        const onReady = () => {
+            setAuthenticated(true);
+            setPassError(undefined);
+        }
+
+        const onDisconnect = () => {
+            setAuthenticated(false);
+            setInitialized(false);
+        }
+
+        socket.on("auth_required", onAuthNeeded)
+        socket.on("wrong_pass", onWrongPass)
+
+        socket.on("serverReady", onReady)
+        socket.on("disconnect", onDisconnect)
+
+        const onInitialized = () => {
+            setInitialized(true);
+            console.log("Server reported that everything is ready")
+        }
+
+        socket.on("initialized", onInitialized)
+        return () => {
+            socket.off("auth_required", onAuthNeeded)
+            socket.off("wrong_pass", onWrongPass)
+            socket.off("serverReady", onReady)
+            socket.off("disconnect", onDisconnect)
+            socket.off("initialized", onInitialized)
+        }
+    }, [password])
+
     // check device
     useEffect(() => {
         checkCamera().then((has) => {
@@ -72,31 +127,30 @@ const useClient = () => {
 
     // 2. Setup Device
     useEffect(() => {
-        if (!connected) return;
+        if (!connected || !authenticated) return;
 
         let isMounted = true;
         const dev = new Device();
 
-        socket.once("serverReady", () => {
-            socket.emit("getCapabilities", {}, async (capabilities: RtpCapabilities) => {
-                if (!isMounted) return;
-                await dev.load({ routerRtpCapabilities: capabilities });
-                setDevice(dev);
-            })
+        socket.emit("getCapabilities", {}, async (capabilities: RtpCapabilities) => {
+            if (!isMounted) return;
+            await dev.load({ routerRtpCapabilities: capabilities });
+            setDevice(dev);
         })
 
         return () => { isMounted = false; };
-    }, [connected]);
+    }, [connected, authenticated]);
 
     // 3. Handle Receiving Streams
     useEffect(() => {
-        if (!device) return;
+        if (!device || !authenticated || !initialized) return;
 
         let getStreamFunc: any;
 
         createRecvTransport(socket, device, (transport) => {
             recTransportRef.current = transport;
         }).then((getstream) => {
+            console.log("Ready to consume")
             getStreamFunc = getstream;
             getStreamRef.current = getstream;
             socket.emit("consumeReady");
@@ -145,7 +199,7 @@ const useClient = () => {
             console.log("Detach newProducer")
             socket.off("newProducer", onNewProducer);
         };
-    }, [device]);
+    }, [device, authenticated, initialized]);
 
 
     // 4. Setup Send Transport
@@ -310,7 +364,8 @@ const useClient = () => {
         closeRef,
         getStreamRef,
         sendStream,
-        screenStream, setScreenStream
+        screenStream, setScreenStream,
+        passError, password, setPassword, authenticate
     }
 }
 

@@ -22,15 +22,29 @@ const io = new Server(server, { cors: { origin: "*" } });
 const meetings: Record<string, Meeting> = {};
 
 app.use(cors({ origin: "*" }))
+app.use(express.json())
 
 createWorker().then(async (worker) => {
     io.on("connection", async (socket: ExtendedSocket) => {
         //meeting related stuff
 
-        socket.on("prepare", (mId: string) => {
+        socket.on("prepare", (mId: string, password?: string) => {
             if (!meetings[mId]) {
                 return;
             }
+
+            if (meetings[mId].password) {
+                if (!password) {
+                    socket.emit("auth_required")
+                    return;
+                }
+
+                if (meetings[mId].password != password) {
+                    socket.emit("wrong_pass")
+                    return;
+                }
+            }
+
             const router = meetings[mId].router;
 
             roomHandler(router, socket, meetings, mId);
@@ -85,6 +99,7 @@ createWorker().then(async (worker) => {
                 socket.on("addstream", onAddStream)
 
                 const onConsumeReady = () => {
+                    console.log("Consume ready")
                     if (meetings[meetingId]) {
                         for (let i in meetings[meetingId].participants) {
                             meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);
@@ -101,6 +116,8 @@ createWorker().then(async (worker) => {
                     socket.off("consumeReady", onConsumeReady)
                     socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
                     delete meetings[meetingId].participants[transportId];
+                    socket.off("disconnect", onLeave)
+                    socket.off("leave", onLeave)
                 }
 
                 socket.emit("participants", meetings[meetingId].participants)
@@ -114,8 +131,10 @@ createWorker().then(async (worker) => {
                     sVideo: false
                 }
 
-                socket.once("disconnect", onLeave)
-                socket.once("leave", onLeave)
+                socket.on("disconnect", onLeave)
+                socket.on("leave", onLeave)
+
+                socket.emit("initialized")
             })
 
             socket.emit("serverReady");
@@ -143,6 +162,8 @@ createWorker().then(async (worker) => {
     // create meeting
     app.post("/api/meeting/:id", async (req, res) => {
         const id = req.params.id;
+        const password = req.body.password ? req.body.password : undefined;
+        console.log(req.body)
 
         if (id == "join" || id.includes(' ')) {
             return res.status(400).json({
@@ -160,7 +181,8 @@ createWorker().then(async (worker) => {
             id: id,
             participants: {},
             producerTransports: {},
-            router: await createRouter(worker)
+            router: await createRouter(worker),
+            password: password
         }
 
         return res.status(201).json({
