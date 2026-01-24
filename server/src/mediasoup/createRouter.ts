@@ -8,7 +8,14 @@ const createRouter = async (worker: Worker) => {
             clockRate: 90000,
             parameters: {
                 'x-google-start-bitrate': 15000,
-            }
+            },
+            rtcpFeedback: [
+                { type: 'nack' },
+                { type: 'nack', parameter: 'pli' },
+                { type: 'ccm', parameter: 'fir' },
+                { type: 'goog-remb' },
+                { type: 'transport-cc' }
+            ]
         },
         {
             kind: 'video',
@@ -33,7 +40,14 @@ const createRouter = async (worker: Worker) => {
             clockRate: 90000,
             parameters: {
                 'x-google-start-bitrate': 15000
-            }
+            },
+            rtcpFeedback: [
+                { type: 'nack' },
+                { type: 'nack', parameter: 'pli' },
+                { type: 'ccm', parameter: 'fir' },
+                { type: 'goog-remb' },
+                { type: 'transport-cc' }
+            ]
         },
         {
             kind: 'video',

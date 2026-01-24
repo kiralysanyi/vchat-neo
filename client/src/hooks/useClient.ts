@@ -166,8 +166,8 @@ const useClient = () => {
 
     useEffect(() => {
         if (cameraStream && sendStream && sendTransportRef.current) {
-            const { codec } = getCodecOption("VP9")
-            sendStream(cameraStream, 1, codec, { videoGoogleMaxBitrate: 10000, videoGoogleMinBitrate: 1000, videoGoogleStartBitrate: 15000 }).then(() => {
+            const { codec, codecOptions } = getCodecOption("VP8")
+            sendStream(cameraStream, 1, codec, codecOptions).then(() => {
                 console.log("Sending camera stream")
                 socket.emit("addstream", 1)
             })
@@ -269,6 +269,15 @@ const useClient = () => {
             recTransportRef.current && recTransportRef.current.close();
         }
     }, [])
+
+    // initiate start sequence
+    useEffect(() => {
+        if (!connected) {
+            return;
+        }
+
+        socket.emit("prepare", params.id)
+    }, [connected])
 
     // log transport states
     useEffect(() => {

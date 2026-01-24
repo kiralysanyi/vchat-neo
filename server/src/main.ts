@@ -27,15 +27,13 @@ createWorker().then(async (worker) => {
     io.on("connection", async (socket: ExtendedSocket) => {
         //meeting related stuff
 
-        socket.on("join", (meetingId: string, transportId: string, nickname) => {
-            if (meetings[meetingId] == undefined) {
-                console.error("Meeting not found: ", meetingId)
+        socket.on("prepare", (mId: string) => {
+            if (!meetings[mId]) {
                 return;
             }
+            const router = meetings[mId].router;
 
-            const router = meetings[meetingId].router;
-
-            roomHandler(router, socket, meetings, meetingId);
+            roomHandler(router, socket, meetings, mId);
 
             // handle rtpcapabilities request
             const onGetCapabilities = (_: any, cb: any) => {
@@ -45,76 +43,85 @@ createWorker().then(async (worker) => {
 
             socket.on("getCapabilities", onGetCapabilities);
 
-            socket.meetid = meetingId;
-
-            socket.join(meetings[meetingId].id);
-
-            socket.to(meetings[meetingId].id).emit("newJoined", {
-                nickname: nickname,
-                producerTransportId: transportId
-            })
-
-            const onAddStream = (payloadId: number) => {
-                switch (payloadId) {
-                    case 1:
-                        meetings[meetingId].participants[transportId].audio = true;
-                        break;
-
-                    case 2:
-                        meetings[meetingId].participants[transportId].video = true;
-                        break;
-
-                    case 3:
-                        meetings[meetingId].participants[transportId].sVideo = true;
-                        break;
-
-                    case 4:
-                        meetings[meetingId].participants[transportId].sAudio = true;
-                        break;
-
-                    default:
-                        break;
+            socket.once("join", (meetingId: string, transportId: string, nickname) => {
+                if (meetings[meetingId] == undefined) {
+                    console.error("Meeting not found: ", meetingId)
+                    return;
                 }
-                socket.to(meetings[meetingId].id).emit("newProducer", transportId, payloadId)
-            }
 
-            socket.on("addstream", onAddStream)
+                socket.meetid = meetingId;
 
-            const onConsumeReady = () => {
-                if (meetings[meetingId]) {
-                    for (let i in meetings[meetingId].participants) {
-                        meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);
-                        meetings[meetingId].participants[i].video && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 2);
-                        meetings[meetingId].participants[i].sVideo && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 3);
-                        meetings[meetingId].participants[i].sAudio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 4);
+                socket.join(meetings[meetingId].id);
+
+                socket.to(meetings[meetingId].id).emit("newJoined", {
+                    nickname: nickname,
+                    producerTransportId: transportId
+                })
+
+                const onAddStream = (payloadId: number) => {
+                    switch (payloadId) {
+                        case 1:
+                            meetings[meetingId].participants[transportId].audio = true;
+                            break;
+
+                        case 2:
+                            meetings[meetingId].participants[transportId].video = true;
+                            break;
+
+                        case 3:
+                            meetings[meetingId].participants[transportId].sVideo = true;
+                            break;
+
+                        case 4:
+                            meetings[meetingId].participants[transportId].sAudio = true;
+                            break;
+
+                        default:
+                            break;
+                    }
+                    socket.to(meetings[meetingId].id).emit("newProducer", transportId, payloadId)
+                }
+
+                socket.on("addstream", onAddStream)
+
+                const onConsumeReady = () => {
+                    if (meetings[meetingId]) {
+                        for (let i in meetings[meetingId].participants) {
+                            meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);
+                            meetings[meetingId].participants[i].video && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 2);
+                            meetings[meetingId].participants[i].sVideo && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 3);
+                            meetings[meetingId].participants[i].sAudio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 4);
+                        }
                     }
                 }
-            }
 
-            socket.on("consumeReady", onConsumeReady)
-            const onLeave = () => {
-                socket.off("addstream", onAddStream)
-                socket.off("consumeReady", onConsumeReady)
-                socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
-                delete meetings[meetingId].participants[transportId];
-            }
+                socket.on("consumeReady", onConsumeReady)
+                const onLeave = () => {
+                    socket.off("addstream", onAddStream)
+                    socket.off("consumeReady", onConsumeReady)
+                    socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
+                    delete meetings[meetingId].participants[transportId];
+                }
 
-            socket.emit("participants", meetings[meetingId].participants)
+                socket.emit("participants", meetings[meetingId].participants)
 
-            meetings[meetingId].participants[transportId] = {
-                nickname: nickname,
-                producerTransportId: transportId,
-                audio: false,
-                video: false,
-                sAudio: false,
-                sVideo: false
-            }
+                meetings[meetingId].participants[transportId] = {
+                    nickname: nickname,
+                    producerTransportId: transportId,
+                    audio: false,
+                    video: false,
+                    sAudio: false,
+                    sVideo: false
+                }
 
-            socket.once("disconnect", onLeave)
-            socket.once("leave", onLeave)
+                socket.once("disconnect", onLeave)
+                socket.once("leave", onLeave)
+            })
 
-            socket.emit("serverReady")
+            socket.emit("serverReady");
         })
+
+
 
         // detach handlers if any
         socket.on("disconnect", () => {
