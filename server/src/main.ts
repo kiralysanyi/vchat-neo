@@ -163,7 +163,6 @@ createWorker().then(async (worker) => {
     app.post("/api/meeting/:id", async (req, res) => {
         const id = req.params.id;
         const password = req.body.password ? req.body.password : undefined;
-        console.log(req.body)
 
         if (id == "join" || id.includes(' ')) {
             return res.status(400).json({
