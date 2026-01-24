@@ -98,15 +98,12 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: 
 
             resolve((transportId: string, payloadId: number, onClose: Function) => {
                 return new Promise((resolveStream) => {
-                    console.log("Consume stream:", transportId, payloadId)
-
                     socket.emit("consume", { rtpCapabilities: device.rtpCapabilities, payloadId, transportId },
                         async (data: { error: any; id: string; producerId: string; kind: MediaKind; rtpParameters: RtpParameters; }) => {
                             if (data.error) {
                                 return console.error(data.error)
                             }
 
-                            console.log("Attaching consumer")
                             const consumer = await transport.consume({
                                 id: data.id,
                                 producerId: data.producerId,
@@ -116,7 +113,6 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: 
 
                             consumers[consumer.id] = consumer;
 
-                            console.log("attached consumer")
 
                             consumer.on("@close", () => {
                                 onClose();

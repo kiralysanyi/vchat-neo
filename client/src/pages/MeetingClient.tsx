@@ -170,6 +170,11 @@ const MeetingClient = () => {
                     <PhoneArrowDownLeftIcon width={32} height={32} />
                 </button>
             </div>
+            {!connected && <div className="fixed top-0 left-0 w-full h-full z-50 bg-gray-900 flex flex-col justify-center align-middle p-3 gap-2">
+                <h1>Disconnected from server</h1>
+                <h2 className="text-2xl">Connecting</h2>
+                <div className="loader"></div>
+                </div>}
         </div>
     );
 };

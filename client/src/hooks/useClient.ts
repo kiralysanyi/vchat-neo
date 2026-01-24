@@ -89,7 +89,7 @@ const useClient = () => {
 
     // 3. Handle Receiving Streams
     useEffect(() => {
-        if (!device || !connected) return;
+        if (!device) return;
 
         let getStreamFunc: any;
 
@@ -102,7 +102,7 @@ const useClient = () => {
         });
 
         const onNewProducer = async (transportId: string, payloadId: number) => {
-            if (!getStreamFunc) return;
+            if (!getStreamFunc || !connected) return;
 
             const { stream } = await getStreamFunc(transportId, payloadId, () => {
                 // On Close: Remove stream from participant
@@ -136,15 +136,19 @@ const useClient = () => {
             });
         };
 
+        console.log("Attach newProducer listener")
         socket.on("newProducer", onNewProducer);
 
-        return () => { socket.off("newProducer", onNewProducer); };
-    }, [device, connected]);
+        return () => {
+            console.log("Detach newProducer")
+            socket.off("newProducer", onNewProducer);
+        };
+    }, [device]);
 
 
     // 4. Setup Send Transport
     useEffect(() => {
-        if (!device || !connected) return;
+        if (!device) return;
 
         createSendTransport(socket, device, (transport) => {
             console.log("Send transport created");
@@ -154,27 +158,27 @@ const useClient = () => {
 
             setSendStream(() => sendstream);
         });
-    }, [device, connected]);
+    }, [device]);
 
     // 5. Produce Local Streams (Camera/Mic)
 
     useEffect(() => {
-        if (cameraStream && sendStream && sendTransportRef.current && connected) {
+        if (cameraStream && sendStream && sendTransportRef.current) {
             sendStream(cameraStream, 1).then(() => {
                 console.log("Sending camera stream")
                 socket.emit("addstream", 1)
             })
         }
-    }, [cameraStream, sendStream, sendTransportRef.current, connected]);
+    }, [cameraStream, sendStream, sendTransportRef.current]);
 
     useEffect(() => {
-        if (microphoneStream && sendStream && sendTransportRef.current && connected) {
+        if (microphoneStream && sendStream && sendTransportRef.current) {
             sendStream(microphoneStream, 2).then(() => {
                 console.log("Sending microphone stream")
                 socket.emit("addstream", 2)
             })
         }
-    }, [microphoneStream, sendStream, sendTransportRef.current, connected]);
+    }, [microphoneStream, sendStream, sendTransportRef.current]);
 
     // produce screen stream
     useEffect(() => {
@@ -230,15 +234,6 @@ const useClient = () => {
     // handle disconnect
     useEffect(() => {
         const onDisconnect = () => {
-            if (recTransportRef.current) {
-                recTransportRef.current.close()
-            }
-
-            if (sendTransportRef.current) {
-                sendTransportRef.current.close()
-            }
-
-            setDevice(null)
             setConnected(false);
             setParticipants({});
         }
@@ -259,6 +254,7 @@ const useClient = () => {
     // close all transports on leave
     useEffect(() => {
         return () => {
+            console.log("Closing streams")
             screenStream?.getTracks().forEach((track) => {
                 track.onended && track.onended(new Event("ended"))
                 track.stop()
