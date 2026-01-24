@@ -80,7 +80,13 @@ const MeetingClient = () => {
                 console.log("Added screen video")
                 socket.emit("addstream", 3)
                 if (audio) {
-                    sendStream(new MediaStream([audio]), 4).then(() => {
+                    sendStream(new MediaStream([audio]), 4, {
+                        kind: 'audio',
+                        mimeType: 'audio/opus',
+                        clockRate: 48000,
+                        channels: 2,
+                        preferredPayloadType: 111,
+                    }, { opusDtx: false, opusFec: true, opusMaxAverageBitrate: 128000, opusNack: true, opusStereo: true }).then(() => {
                         console.log("Added screen audio")
 
                         socket.emit("addstream", 4)
