@@ -7,7 +7,7 @@ const createRouter = async (worker: Worker) => {
             mimeType: "video/VP9",
             clockRate: 90000,
             parameters: {
-                'x-google-start-bitrate': 1000,
+                'x-google-start-bitrate': 15000,
             }
         },
         {
@@ -32,7 +32,7 @@ const createRouter = async (worker: Worker) => {
             mimeType: 'video/VP8',
             clockRate: 90000,
             parameters: {
-                'x-google-start-bitrate': 1000
+                'x-google-start-bitrate': 15000
             }
         },
         {
@@ -62,6 +62,17 @@ const createRouter = async (worker: Worker) => {
                 'maxaveragebitrate': 128000,
                 // Disable DTX to prevent the audio from "cutting out" during quiet parts
                 'usedtx': 0,
+                'useinbandfec': 1
+            }
+        },
+        {
+            kind: 'audio',
+            mimeType: 'audio/opus',
+            clockRate: 48000,
+            channels: 2,
+            parameters: {
+                'maxaveragebitrate': 16000,
+                'usedtx': 1,
                 'useinbandfec': 1
             }
         }
