@@ -118,6 +118,15 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: 
                                 onClose();
                             })
 
+                            const onConClose = (consumerId: string) => {
+                                if (consumerId == consumer.id) {
+                                    onClose();
+                                }
+                            }
+
+
+                            socket.on("conclose", onConClose)
+
                             resolveStream({
                                 stream: new MediaStream([consumer.track]), close: () => {
                                     consumer.close();

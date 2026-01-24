@@ -88,7 +88,10 @@ const MeetingClient = () => {
         setStreamVolume(1)
         if (p.streaming == true && getStreamRef.current != undefined) {
             // get screen video
-            getStreamRef.current(p.producerTransportId, 3, () => { }).then(({ stream, close }) => {
+            getStreamRef.current(p.producerTransportId, 3, () => {
+                // onclose
+                setViewedParticipant(null)
+            }).then(({ stream, close }) => {
                 closeRef.current.closeVid = close
                 setParticipants(prev => {
                     const updated = { ...prev };
@@ -103,18 +106,20 @@ const MeetingClient = () => {
 
             // get screen audio
 
-            getStreamRef.current(p.producerTransportId, 4, () => { }).then(({ stream, close }) => {
-                closeRef.current.closeAudio = close
-                setParticipants(prev => {
-                    const updated = { ...prev };
-                    if (!updated[p.producerTransportId]) return prev; // Guard against unknown participant
+            if (p.streamingAudio == true) {
+                getStreamRef.current(p.producerTransportId, 4, () => { }).then(({ stream, close }) => {
+                    closeRef.current.closeAudio = close
+                    setParticipants(prev => {
+                        const updated = { ...prev };
+                        if (!updated[p.producerTransportId]) return prev; // Guard against unknown participant
 
-                    updated[p.producerTransportId].screenAudioStream = stream
+                        updated[p.producerTransportId].screenAudioStream = stream
 
-                    return { ...updated };
-                });
-                setViewedParticipant(p)
-            })
+                        return { ...updated };
+                    });
+                    setViewedParticipant(p)
+                })
+            }
         }
     }
 
@@ -174,7 +179,7 @@ const MeetingClient = () => {
                 <h1>Disconnected from server</h1>
                 <h2 className="text-2xl">Connecting</h2>
                 <div className="loader"></div>
-                </div>}
+            </div>}
         </div>
     );
 };

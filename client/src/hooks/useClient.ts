@@ -116,6 +116,7 @@ const useClient = () => {
                     if (payloadId === 3) updated[transportId].streaming = false;
                     if (payloadId === 3) updated[transportId].screenStream = undefined;
                     if (payloadId === 4) updated[transportId].screenAudioStream = undefined;
+                    if (payloadId === 4) updated[transportId].streamingAudio = undefined;
 
                     return { ...updated };
                 });
@@ -130,7 +131,7 @@ const useClient = () => {
                 if (payloadId === 2) updated[transportId].microphoneStream = stream;
                 // Only report that screenshare available
                 if (payloadId === 3) updated[transportId].streaming = true;
-                //if (payloadId === 4) updated[transportId].screenAudioStream = stream;
+                if (payloadId === 4) updated[transportId].streamingAudio = true;
 
                 return { ...updated };
             });
