@@ -3,9 +3,9 @@ import type { ProducerCodecOptions, RtpCodecCapability } from "mediasoup-client/
 const getCodecOption = (codecName: string): { codec: RtpCodecCapability, codecOptions: ProducerCodecOptions } => {
     let codec: RtpCodecCapability;
     let codecOptions: ProducerCodecOptions = {
-        videoGoogleStartBitrate: 15000,
-        videoGoogleMinBitrate: 8000,
-        videoGoogleMaxBitrate: 100000
+        videoGoogleMaxBitrate: 3000000,
+        videoGoogleMinBitrate: 500000,
+        videoGoogleStartBitrate: 1000000
     }
 
     switch (codecName) {

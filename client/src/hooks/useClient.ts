@@ -1,11 +1,10 @@
 import { Device } from "mediasoup-client";
-import type { ConnectionState, ProducerCodecOptions, RtpCodecCapability, Transport } from "mediasoup-client/types";
+import type { ConnectionState, ProducerCodecOptions, RtpCapabilities, RtpCodecCapability, Transport } from "mediasoup-client/types";
 import config from "../config";
 import { useContext, useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { checkCamera } from "../capture/getCamera";
 import { checkMicrophone } from "../capture/getMicrophone";
-import getRouterCapabilities from "../mediasoup/getRouterCapabilities";
 import { createRecvTransport, createSendTransport } from "../mediasoup/utils";
 import { DataContext } from "../providers/DataProvider";
 import socket from "../socket";
@@ -43,6 +42,61 @@ const useClient = () => {
 
     const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
 
+    const [password, setPassword] = useState("");
+    const [passError, setPassError] = useState<string>();
+    const [authenticated, setAuthenticated] = useState(false);
+
+    const [initialized, setInitialized] = useState(false);
+
+    // handle auth
+    const authenticate = () => {
+        socket.emit("prepare", params.id, password)
+    }
+
+    useEffect(() => {
+        const onAuthNeeded = () => {
+            if (password.length > 0) {
+                authenticate();
+            } else {
+                setPassError("Password required to join")
+            }
+        }
+
+        const onWrongPass = () => {
+            setPassError("Wrong password")
+        }
+
+        const onReady = () => {
+            setAuthenticated(true);
+            setPassError(undefined);
+        }
+
+        const onDisconnect = () => {
+            setAuthenticated(false);
+            setInitialized(false);
+        }
+
+        socket.on("auth_required", onAuthNeeded)
+        socket.on("wrong_pass", onWrongPass)
+
+        socket.on("serverReady", onReady)
+        socket.on("disconnect", onDisconnect)
+
+        const onInitialized = () => {
+            setInitialized(true);
+            console.log("Server reported that everything is ready")
+        }
+
+        socket.on("initialized", onInitialized)
+        return () => {
+            socket.off("auth_required", onAuthNeeded)
+            socket.off("wrong_pass", onWrongPass)
+            socket.off("serverReady", onReady)
+            socket.off("disconnect", onDisconnect)
+            socket.off("initialized", onInitialized)
+        }
+    }, [password])
+
     // check device
     useEffect(() => {
         checkCamera().then((has) => {
@@ -73,29 +127,30 @@ const useClient = () => {
 
     // 2. Setup Device
     useEffect(() => {
-        if (!connected) return;
+        if (!connected || !authenticated) return;
 
         let isMounted = true;
         const dev = new Device();
 
-        getRouterCapabilities().then(async (capabilities) => {
+        socket.emit("getCapabilities", {}, async (capabilities: RtpCapabilities) => {
             if (!isMounted) return;
             await dev.load({ routerRtpCapabilities: capabilities });
             setDevice(dev);
-        }).catch(console.error);
+        })
 
         return () => { isMounted = false; };
-    }, [connected]);
+    }, [connected, authenticated]);
 
     // 3. Handle Receiving Streams
     useEffect(() => {
-        if (!device) return;
+        if (!device || !authenticated || !initialized) return;
 
         let getStreamFunc: any;
 
         createRecvTransport(socket, device, (transport) => {
             recTransportRef.current = transport;
         }).then((getstream) => {
+            console.log("Ready to consume")
             getStreamFunc = getstream;
             getStreamRef.current = getstream;
             socket.emit("consumeReady");
@@ -144,7 +199,7 @@ const useClient = () => {
             console.log("Detach newProducer")
             socket.off("newProducer", onNewProducer);
         };
-    }, [device]);
+    }, [device, authenticated, initialized]);
 
 
     // 4. Setup Send Transport
@@ -165,8 +220,8 @@ const useClient = () => {
 
     useEffect(() => {
         if (cameraStream && sendStream && sendTransportRef.current) {
-            const { codec } = getCodecOption("VP9")
-            sendStream(cameraStream, 1, codec, { videoGoogleMaxBitrate: 10000, videoGoogleMinBitrate: 1000, videoGoogleStartBitrate: 15000 }).then(() => {
+            const { codec, codecOptions } = getCodecOption("VP8")
+            sendStream(cameraStream, 1, codec, codecOptions).then(() => {
                 console.log("Sending camera stream")
                 socket.emit("addstream", 1)
             })
@@ -269,6 +324,15 @@ const useClient = () => {
         }
     }, [])
 
+    // initiate start sequence
+    useEffect(() => {
+        if (!connected) {
+            return;
+        }
+
+        socket.emit("prepare", params.id)
+    }, [connected])
+
     // log transport states
     useEffect(() => {
         const onStateChange = (state: ConnectionState) => {
@@ -300,7 +364,8 @@ const useClient = () => {
         closeRef,
         getStreamRef,
         sendStream,
-        screenStream, setScreenStream
+        screenStream, setScreenStream,
+        passError, password, setPassword, authenticate
     }
 }
 

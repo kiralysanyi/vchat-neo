@@ -12,164 +12,137 @@ import { ExtendedSocket } from "./types/ExtendedSocket";
 import cors from "cors";
 import { Meeting } from "./types/Meeting";
 import * as fs from "fs";
+import roomHandler from "./mediasoup/roomHandler";
 
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, { cors: { origin: "*" } });
 
-const producerTransports: Record<string, ExtendedProducer> = {};
-
 const meetings: Record<string, Meeting> = {};
 
 app.use(cors({ origin: "*" }))
+app.use(express.json())
 
 createWorker().then(async (worker) => {
-    const router = await createRouter(worker)
-
     io.on("connection", async (socket: ExtendedSocket) => {
-
-        producerHandler(router, socket, producerTransports, (transportId) => {
-            socket.on("disconnect", () => {
-                delete producerTransports[transportId];
-            })
-        }, (transportId, payloadId) => {
-            // new stream
-            if (socket.meetid) {
-                if (meetings[socket.meetid]) {
-                    switch (payloadId) {
-                        case 1:
-                            meetings[socket.meetid].participants[transportId].audio = true;
-                            break;
-
-                        case 2:
-                            meetings[socket.meetid].participants[transportId].video = true;
-                            break;
-
-                        case 3:
-                            meetings[socket.meetid].participants[transportId].sVideo = true;
-                            break;
-
-                        case 4:
-                            meetings[socket.meetid].participants[transportId].sAudio = true;
-                            break;
-
-                        default:
-                            break;
-                    }
-                }
-            }
-        }, (transportId: string, payloadId: number) => {
-            // stream removed
-
-            if (socket.meetid) {
-                if (meetings[socket.meetid] && meetings[socket.meetid].participants[transportId]) {
-                    switch (payloadId) {
-                        case 1:
-                            meetings[socket.meetid].participants[transportId].audio = false;
-                            break;
-
-                        case 2:
-                            meetings[socket.meetid].participants[transportId].video = false;
-                            break;
-
-                        case 3:
-                            meetings[socket.meetid].participants[transportId].sVideo = false;
-                            break;
-
-                        case 4:
-                            meetings[socket.meetid].participants[transportId].sAudio = false;
-                            break;
-
-                        default:
-                            break;
-                    }
-                }
-            }
-        });
-
-        consumerHandler(router, socket, producerTransports, (transportId, accept, deny) => {
-            accept();
-        })
-
         //meeting related stuff
 
-        socket.on("join", (meetingId: string, transportId: string, nickname) => {
-            if (meetings[meetingId] == undefined) {
-                console.error("Meeting not found: ", meetingId)
+        socket.on("prepare", (mId: string, password?: string) => {
+            if (!meetings[mId]) {
                 return;
             }
 
-            socket.meetid = meetingId;
-
-            socket.join(meetings[meetingId].id);
-
-            socket.to(meetings[meetingId].id).emit("newJoined", {
-                nickname: nickname,
-                producerTransportId: transportId
-            })
-
-            const onAddStream = (payloadId: number) => {
-                switch (payloadId) {
-                    case 1:
-                        meetings[meetingId].participants[transportId].audio = true;
-                        break;
-
-                    case 2:
-                        meetings[meetingId].participants[transportId].video = true;
-                        break;
-
-                    case 3:
-                        meetings[meetingId].participants[transportId].sVideo = true;
-                        break;
-
-                    case 4:
-                        meetings[meetingId].participants[transportId].sAudio = true;
-                        break;
-
-                    default:
-                        break;
+            if (meetings[mId].password) {
+                if (!password) {
+                    socket.emit("auth_required")
+                    return;
                 }
-                socket.to(meetings[meetingId].id).emit("newProducer", transportId, payloadId)
+
+                if (meetings[mId].password != password) {
+                    socket.emit("wrong_pass")
+                    return;
+                }
             }
 
-            socket.on("addstream", onAddStream)
+            const router = meetings[mId].router;
 
-            const onConsumeReady = () => {
-                if (meetings[meetingId]) {
-                    for (let i in meetings[meetingId].participants) {
-                        meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);
-                        meetings[meetingId].participants[i].video && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 2);
-                        meetings[meetingId].participants[i].sVideo && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 3);
-                        meetings[meetingId].participants[i].sAudio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 4);
+            roomHandler(router, socket, meetings, mId);
+
+            // handle rtpcapabilities request
+            const onGetCapabilities = (_: any, cb: any) => {
+                console.log("GetCapabilities")
+                cb(router.rtpCapabilities)
+            }
+
+            socket.on("getCapabilities", onGetCapabilities);
+
+            socket.once("join", (meetingId: string, transportId: string, nickname) => {
+                if (meetings[meetingId] == undefined) {
+                    console.error("Meeting not found: ", meetingId)
+                    return;
+                }
+
+                socket.meetid = meetingId;
+
+                socket.join(meetings[meetingId].id);
+
+                socket.to(meetings[meetingId].id).emit("newJoined", {
+                    nickname: nickname,
+                    producerTransportId: transportId
+                })
+
+                const onAddStream = (payloadId: number) => {
+                    switch (payloadId) {
+                        case 1:
+                            meetings[meetingId].participants[transportId].audio = true;
+                            break;
+
+                        case 2:
+                            meetings[meetingId].participants[transportId].video = true;
+                            break;
+
+                        case 3:
+                            meetings[meetingId].participants[transportId].sVideo = true;
+                            break;
+
+                        case 4:
+                            meetings[meetingId].participants[transportId].sAudio = true;
+                            break;
+
+                        default:
+                            break;
+                    }
+                    socket.to(meetings[meetingId].id).emit("newProducer", transportId, payloadId)
+                }
+
+                socket.on("addstream", onAddStream)
+
+                const onConsumeReady = () => {
+                    console.log("Consume ready")
+                    if (meetings[meetingId]) {
+                        for (let i in meetings[meetingId].participants) {
+                            meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);
+                            meetings[meetingId].participants[i].video && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 2);
+                            meetings[meetingId].participants[i].sVideo && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 3);
+                            meetings[meetingId].participants[i].sAudio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 4);
+                        }
                     }
                 }
-            }
 
-            socket.on("consumeReady", onConsumeReady)
+                socket.on("consumeReady", onConsumeReady)
+                const onLeave = () => {
+                    socket.off("addstream", onAddStream)
+                    socket.off("consumeReady", onConsumeReady)
+                    socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
+                    delete meetings[meetingId].participants[transportId];
+                    socket.off("disconnect", onLeave)
+                    socket.off("leave", onLeave)
+                }
 
-            const onLeave = () => {
-                socket.off("addstream", onAddStream)
-                socket.off("consumeReady", onConsumeReady)
-                socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
-                delete meetings[meetingId].participants[transportId];
-            }
+                socket.emit("participants", meetings[meetingId].participants)
 
-            socket.emit("participants", meetings[meetingId].participants)
+                meetings[meetingId].participants[transportId] = {
+                    nickname: nickname,
+                    producerTransportId: transportId,
+                    audio: false,
+                    video: false,
+                    sAudio: false,
+                    sVideo: false
+                }
 
-            meetings[meetingId].participants[transportId] = {
-                nickname: nickname,
-                producerTransportId: transportId,
-                audio: false,
-                video: false,
-                sAudio: false,
-                sVideo: false
-            }
+                socket.on("disconnect", onLeave)
+                socket.on("leave", onLeave)
 
-            socket.once("disconnect", onLeave)
-            socket.once("leave", onLeave)
+                socket.emit("initialized")
+            })
+
+            socket.emit("serverReady");
         })
 
+
+
+        // detach handlers if any
         socket.on("disconnect", () => {
             if (socket.detachConsumer) {
                 console.log("Detaching consumer handler from", socket.id)
@@ -185,15 +158,11 @@ createWorker().then(async (worker) => {
         console.log("Connected socket")
     })
 
-    app.get("/api/router/capabilities", (req, res) => {
-        res.json({
-            rtpCapabilities: router.rtpCapabilities
-        })
-    })
 
     // create meeting
-    app.post("/api/meeting/:id", (req, res) => {
+    app.post("/api/meeting/:id", async (req, res) => {
         const id = req.params.id;
+        const password = req.body.password ? req.body.password : undefined;
 
         if (id == "join" || id.includes(' ')) {
             return res.status(400).json({
@@ -209,7 +178,10 @@ createWorker().then(async (worker) => {
 
         meetings[id] = {
             id: id,
-            participants: {}
+            participants: {},
+            producerTransports: {},
+            router: await createRouter(worker),
+            password: password
         }
 
         return res.status(201).json({
@@ -228,7 +200,10 @@ createWorker().then(async (worker) => {
             })
         }
 
-        return res.json(meeting)
+        return res.json({
+            id: meeting.id,
+            participants: meeting.participants
+        })
     })
 
     // handle non existent pages
