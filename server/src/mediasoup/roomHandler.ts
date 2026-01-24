@@ -67,6 +67,7 @@ const roomHandler = (router: Router, socket: ExtendedSocket, meetings: Record<st
     });
 
     consumerHandler(router, socket, meetings[meetingId].producerTransports, (transportId, accept, deny) => {
+        // todo: verify access
         accept();
     })
 }
