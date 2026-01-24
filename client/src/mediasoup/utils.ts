@@ -21,6 +21,11 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                 socket.emit("connectProducerTransport", { dtlsParameters }, cb);
             });
 
+            transport.on("produce", ({ kind, rtpParameters, appData }, cb) => {
+                console.log("Produce: ", appData)
+                socket.emit("produce", { kind, rtpParameters, appData }, cb);
+            });
+
             onCreateTransport(transport)
 
             // return addStream function
@@ -35,14 +40,14 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                         }
 
                         sending = true;
-                        transport.once("produce", ({ kind, rtpParameters }, cb) => {
-                            socket.emit("produce", { kind, rtpParameters, payloadId }, cb);
-                        });
 
                         const track = stream.getTracks()[0];
 
                         const producer = await transport.produce({
-                            track: track
+                            track: track,
+                            appData: {
+                                payloadId: payloadId
+                            }
                         })
 
                         // if track ended, close the producer
