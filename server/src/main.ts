@@ -136,13 +136,8 @@ createWorker().then(async (worker) => {
 
             socket.on("addstream", onAddStream)
 
-            const onLeave = () => {
-                socket.off("addstream", onAddStream)
-                socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
-                delete meetings[meetingId].participants[transportId];
-            }
-
-            socket.once("consumeReady", () => {
+            const onConsumeReady = () => {
+                console.log("Consume ready: ", transportId)
                 if (meetings[meetingId]) {
                     for (let i in meetings[meetingId].participants) {
                         meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);
@@ -151,7 +146,16 @@ createWorker().then(async (worker) => {
                         meetings[meetingId].participants[i].sAudio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 4);
                     }
                 }
-            })
+            }
+
+            socket.on("consumeReady", onConsumeReady)
+
+            const onLeave = () => {
+                socket.off("addstream", onAddStream)
+                socket.off("consumeReady", onConsumeReady)
+                socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
+                delete meetings[meetingId].participants[transportId];
+            }
 
             socket.emit("participants", meetings[meetingId].participants)
 

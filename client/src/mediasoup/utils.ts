@@ -21,6 +21,11 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                 socket.emit("connectProducerTransport", { dtlsParameters }, cb);
             });
 
+            transport.on("produce", ({ kind, rtpParameters, appData }, cb) => {
+                console.log("Produce: ", appData)
+                socket.emit("produce", { kind, rtpParameters, appData }, cb);
+            });
+
             onCreateTransport(transport)
 
             // return addStream function
@@ -35,14 +40,14 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                         }
 
                         sending = true;
-                        transport.once("produce", ({ kind, rtpParameters }, cb) => {
-                            socket.emit("produce", { kind, rtpParameters, payloadId }, cb);
-                        });
 
                         const track = stream.getTracks()[0];
 
                         const producer = await transport.produce({
-                            track: track
+                            track: track,
+                            appData: {
+                                payloadId: payloadId
+                            }
                         })
 
                         // if track ended, close the producer
@@ -93,15 +98,12 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: 
 
             resolve((transportId: string, payloadId: number, onClose: Function) => {
                 return new Promise((resolveStream) => {
-                    console.log("Consume stream:", transportId, payloadId)
-
                     socket.emit("consume", { rtpCapabilities: device.rtpCapabilities, payloadId, transportId },
                         async (data: { error: any; id: string; producerId: string; kind: MediaKind; rtpParameters: RtpParameters; }) => {
                             if (data.error) {
                                 return console.error(data.error)
                             }
 
-                            console.log("Attaching consumer")
                             const consumer = await transport.consume({
                                 id: data.id,
                                 producerId: data.producerId,
@@ -111,7 +113,6 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: 
 
                             consumers[consumer.id] = consumer;
 
-                            console.log("attached consumer")
 
                             consumer.on("@close", () => {
                                 onClose();

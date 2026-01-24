@@ -86,3 +86,36 @@ h1 {
 .screenviewer .player video {
   object-fit: contain;
 }
+
+.loader {
+  @apply bg-gray-800;
+  position: relative;
+  width: 300px;
+  height: 0.5rem; /* Slightly thinner for a modern look */
+  overflow: hidden; /* Ensures the bar doesn't spill out */
+  border-radius: 9999px;
+}
+
+@keyframes loader-anim {
+  0% {
+    transform: translateX(-100%) scaleX(0.1);
+  }
+  50% {
+    transform: translateX(0%) scaleX(0.4);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.1);
+  }
+}
+
+.loader::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%; /* Base width is full, then scaled via transform */
+  background-color: rgb(0, 136, 255);
+  animation: loader-anim 1.5s ease-in-out infinite;
+  border-radius: 9999px;
+}

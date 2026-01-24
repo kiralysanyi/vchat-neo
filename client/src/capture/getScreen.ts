@@ -15,4 +15,12 @@ const getScreen = async (): Promise<MediaStream | null> => {
     })
 }
 
-export default getScreen;
+const checkScreenSupport = () => {
+    if (navigator.mediaDevices.getDisplayMedia == undefined) {
+        return false
+    } else {
+        return true
+    }
+}
+
+export {getScreen, checkScreenSupport};

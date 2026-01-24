@@ -1,3 +1,5 @@
+import checkDevice from "./checkDevice"
+
 const getMicrophone = async (): Promise<MediaStream | null> => {
     return new Promise((resolve) => {
         navigator.mediaDevices.getUserMedia({
@@ -15,4 +17,9 @@ const getMicrophone = async (): Promise<MediaStream | null> => {
 
 }
 
-export default getMicrophone;
+const checkMicrophone = async () => {
+    const data = await checkDevice()
+    return data.hasAudioDevice;
+}
+
+export { getMicrophone, checkMicrophone };

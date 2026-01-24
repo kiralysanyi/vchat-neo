@@ -3,6 +3,7 @@ import createTransport from "./createTransport";
 import { LISTEN_IPS } from "../config";
 import { ExtendedProducer } from "../types/ExtendedProducer";
 import { ExtendedSocket } from "../types/ExtendedSocket";
+import { CustomAppData } from "../types/CustomAppdata";
 
 const producerHandler = (
     router: Router,
@@ -20,6 +21,13 @@ const producerHandler = (
         try {
             const { transport: newTransport, params } = await createTransport(router, LISTEN_IPS);
             transport = newTransport;
+
+            transport.on("@close", () => {
+                console.log("Transport closed: ", transport?.id)
+                if (transport) {
+                    delete producers[transport.id]
+                }
+            })
 
             producers[transport.id] = {
                 transportId: transport.id,
@@ -47,12 +55,13 @@ const producerHandler = (
     };
 
     // 3. Media production logic
-    const onProduceEvent = async ({ kind, rtpParameters, payloadId }: { kind: MediaKind, rtpParameters: RtpParameters, payloadId: number }, cb: any) => {
+    const onProduceEvent = async ({ kind, rtpParameters, appData }: { kind: MediaKind, rtpParameters: RtpParameters, payloadId: number, appData: CustomAppData }, cb: any) => {
         if (!transport) return cb({ error: "Transport not ready" });
 
         try {
-            const producer = await transport.produce({ rtpParameters, kind });
-
+            const producer = await transport.produce({ rtpParameters, kind, appData });
+            console.log("Producer appdata: ", appData)
+            const payloadId = appData.payloadId;
             // Store the producer in our record
             producers[transport.id].producers[payloadId] = producer;
 
@@ -76,7 +85,7 @@ const producerHandler = (
         if (producers[transportId] == undefined) {
             return;
         }
-        
+
         if (producers[transportId].producers[payloadId]) {
             producers[transportId].producers[payloadId].close()
             onProducerClose && onProducerClose(transportId, payloadId)
