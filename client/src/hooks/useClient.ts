@@ -1,5 +1,5 @@
 import { Device } from "mediasoup-client";
-import type { Transport } from "mediasoup-client/types";
+import type { ConnectionState, Transport } from "mediasoup-client/types";
 import config from "../config";
 import { useContext, useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -275,6 +275,23 @@ const useClient = () => {
             recTransportRef.current && recTransportRef.current.close();
         }
     }, [])
+
+    // log transport states
+    useEffect(() => {
+        const onStateChange = (state: ConnectionState) => {
+            console.log("Transport state: ", state)
+        }
+
+        sendTransportRef.current?.on("connectionstatechange", onStateChange);
+        recTransportRef.current?.on("connectionstatechange", onStateChange);
+
+        return () => {
+            sendTransportRef.current?.off("connectionstatechange", onStateChange);
+            recTransportRef.current?.off("connectionstatechange", onStateChange);
+        }
+
+
+    }, [sendTransportRef, recTransportRef])
 
     return {
         cameraStream,

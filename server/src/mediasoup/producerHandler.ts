@@ -22,6 +22,13 @@ const producerHandler = (
             const { transport: newTransport, params } = await createTransport(router, LISTEN_IPS);
             transport = newTransport;
 
+            transport.on("@close", () => {
+                console.log("Transport closed: ", transport?.id)
+                if (transport) {
+                    delete producers[transport.id]
+                }
+            })
+
             producers[transport.id] = {
                 transportId: transport.id,
                 producers: {}
