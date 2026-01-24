@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { getCamera } from "../capture/getCamera";
 import { getMicrophone } from "../capture/getMicrophone";
@@ -7,6 +7,9 @@ import StreamPlayer from "../components/StreamPlayer";
 import { getScreen, checkScreenSupport } from "../capture/getScreen";
 import { CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import useClient from "../hooks/useClient";
+import socket from "../socket";
+import useStreamConfig from "../hooks/useStreamConfig";
+import getCodecOption from "../utils/getCodecOption";
 
 const MeetingClient = () => {
     const [streamVolume, setStreamVolume] = useState(1);
@@ -19,14 +22,19 @@ const MeetingClient = () => {
         nickname,
         participants, setParticipants,
         connected,
-        screenStream, setScreenStream,
         hasAudio, hasVideo,
         viewedParticipant, setViewedParticipant,
         closeRef,
-        getStreamRef
+        getStreamRef,
+        sendStream,
+        screenStream, setScreenStream
     } = useClient();
 
+    const streamOptions = useStreamConfig();
+
     const navigate = useNavigate();
+
+    const [showScreenOptions, setShowScreenOptions] = useState(false);
 
 
     // UI Handlers
@@ -61,6 +69,29 @@ const MeetingClient = () => {
         }
     };
 
+    // produce screen stream
+    useEffect(() => {
+        if (screenStream && sendStream) {
+            const vid = screenStream.getVideoTracks()[0]
+            const audio = screenStream.getAudioTracks()[0]
+            console.log(vid, audio)
+            const { codec, codecOptions } = getCodecOption(streamOptions.codec)
+            sendStream(new MediaStream([vid]), 3, codec, codecOptions).then(() => {
+                console.log("Added screen video")
+                socket.emit("addstream", 3)
+                if (audio) {
+                    sendStream(new MediaStream([audio]), 4).then(() => {
+                        console.log("Added screen audio")
+
+                        socket.emit("addstream", 4)
+                    })
+                }
+            })
+
+
+        }
+    }, [screenStream, sendStream, streamOptions]);
+
 
     const toggleScreen = async () => {
         if (screenStream) {
@@ -70,17 +101,22 @@ const MeetingClient = () => {
             })
             setScreenStream(null);
         } else {
-            try {
-                const stream = await getScreen();
-                if (stream) {
-                    stream.getVideoTracks()[0].addEventListener("ended", () => {
-                        setScreenStream(null)
-                    })
-                }
-                setScreenStream(stream)
-            } catch (e) {
-                console.error(e)
+            setShowScreenOptions(true)
+        }
+    }
+
+    const startStream = async () => {
+        setShowScreenOptions(false)
+        try {
+            const stream = await getScreen(streamOptions.fps);
+            if (stream) {
+                stream.getVideoTracks()[0].addEventListener("ended", () => {
+                    setScreenStream(null)
+                })
             }
+            setScreenStream(stream)
+        } catch (e) {
+            console.error(e)
         }
     }
 
@@ -88,7 +124,10 @@ const MeetingClient = () => {
         setStreamVolume(1)
         if (p.streaming == true && getStreamRef.current != undefined) {
             // get screen video
-            getStreamRef.current(p.producerTransportId, 3, () => { }).then(({ stream, close }) => {
+            getStreamRef.current(p.producerTransportId, 3, () => {
+                // onclose
+                setViewedParticipant(null)
+            }).then(({ stream, close }) => {
                 closeRef.current.closeVid = close
                 setParticipants(prev => {
                     const updated = { ...prev };
@@ -103,18 +142,20 @@ const MeetingClient = () => {
 
             // get screen audio
 
-            getStreamRef.current(p.producerTransportId, 4, () => { }).then(({ stream, close }) => {
-                closeRef.current.closeAudio = close
-                setParticipants(prev => {
-                    const updated = { ...prev };
-                    if (!updated[p.producerTransportId]) return prev; // Guard against unknown participant
+            if (p.streamingAudio == true) {
+                getStreamRef.current(p.producerTransportId, 4, () => { }).then(({ stream, close }) => {
+                    closeRef.current.closeAudio = close
+                    setParticipants(prev => {
+                        const updated = { ...prev };
+                        if (!updated[p.producerTransportId]) return prev; // Guard against unknown participant
 
-                    updated[p.producerTransportId].screenAudioStream = stream
+                        updated[p.producerTransportId].screenAudioStream = stream
 
-                    return { ...updated };
-                });
-                setViewedParticipant(p)
-            })
+                        return { ...updated };
+                    });
+                    setViewedParticipant(p)
+                })
+            }
         }
     }
 
@@ -122,20 +163,21 @@ const MeetingClient = () => {
     return (
         <div className="page flex flex-col">
             <div className="streams-container">
-                <div className="participant border p-2">
+                <div className="participant">
                     {cameraStream && <StreamPlayer stream={cameraStream} />}
                     <span className="name">{nickname} (You)</span>
                 </div>
                 {Object.values(participants).map(p => (
-                    <div key={p.producerTransportId} className="participant border p-2">
+                    <div key={p.producerTransportId} className="participant">
                         {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
                         {p.microphoneStream && <StreamPlayer stream={p.microphoneStream} />}
                         {p.streaming && <span onClick={() => {
                             viewStream(p)
                         }} className="view">
-                            <ComputerDesktopIcon width={32} height={32} />
+                            <ComputerDesktopIcon width={28} height={28} />
                         </span>}
                         <span className="name">{p.nickname}</span>
+                        <span className="options"></span>
                     </div>
                 ))}
             </div>
@@ -170,11 +212,38 @@ const MeetingClient = () => {
                     <PhoneArrowDownLeftIcon width={32} height={32} />
                 </button>
             </div>
+            {showScreenOptions && <div className="screenoptions">
+                <div className="options-container">
+                    <h1>Set up screenshare</h1>
+                    <div className="form-group">
+                        <label htmlFor="codec">Codec</label>
+                        <select name="codec" id="codec" value={streamOptions.codec} onChange={(ev) => { streamOptions.setCodec(ev.target.value) }}>
+                            <option value="VP9">VP9</option>
+                            <option value="VP8">VP8</option>
+                            <option value="AV1">AV1 (best quality but may increase cpu usage drastically)</option>
+                            <option value="H264">H264</option>
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="fps">Framerate</label>
+                        <select name="fps" id="fps" value={streamOptions.fps} onChange={(ev) => { streamOptions.setFps(parseInt(ev.target.value)) }}>
+                            <option value="15">15</option>
+                            <option value="24">24</option>
+                            <option value="30">30</option>
+                            <option value="60">60</option>
+                        </select>
+                    </div>
+
+                    <button onClick={() => setShowScreenOptions(false)}>Cancel</button>
+                    <button onClick={startStream}>Start</button>
+                </div>
+            </div>}
             {!connected && <div className="fixed top-0 left-0 w-full h-full z-50 bg-gray-900 flex flex-col justify-center align-middle p-3 gap-2">
                 <h1>Disconnected from server</h1>
                 <h2 className="text-2xl">Connecting</h2>
                 <div className="loader"></div>
-                </div>}
+            </div>}
         </div>
     );
 };

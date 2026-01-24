@@ -89,7 +89,6 @@ createWorker().then(async (worker) => {
         });
 
         consumerHandler(router, socket, producerTransports, (transportId, accept, deny) => {
-            console.log(transportId)
             accept();
         })
 
@@ -137,7 +136,6 @@ createWorker().then(async (worker) => {
             socket.on("addstream", onAddStream)
 
             const onConsumeReady = () => {
-                console.log("Consume ready: ", transportId)
                 if (meetings[meetingId]) {
                     for (let i in meetings[meetingId].participants) {
                         meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);

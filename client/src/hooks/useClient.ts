@@ -1,5 +1,5 @@
 import { Device } from "mediasoup-client";
-import type { ConnectionState, Transport } from "mediasoup-client/types";
+import type { ConnectionState, ProducerCodecOptions, RtpCodecCapability, Transport } from "mediasoup-client/types";
 import config from "../config";
 import { useContext, useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -26,9 +26,8 @@ const useClient = () => {
 
     const [participants, setParticipants] = useState<Record<string, Participant>>({});
     const [device, setDevice] = useState<Device | null>(null);
-    const [sendStream, setSendStream] = useState<((stream: MediaStream, payloadId: number) => Promise<void>) | null>(null);
+    const [sendStream, setSendStream] = useState<((stream: MediaStream, payloadId: number, codec?: RtpCodecCapability, codecOptions?: ProducerCodecOptions) => Promise<void>) | null>(null);
     const [connected, setConnected] = useState(socket.connected);
-    const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
     const getStreamRef = useRef<(transportId: string, payloadId: number, onClose: Function) => Promise<{ stream: MediaStream, close: Function }>>(undefined)
 
     const recTransportRef = useRef<Transport>(undefined);
@@ -41,7 +40,7 @@ const useClient = () => {
     const closeRef = useRef<{ closeVid: Function | undefined, closeAudio: Function | undefined }>({ closeVid: undefined, closeAudio: undefined });
     const [transportId, setTransportId] = useState<string>()
 
-
+    const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
 
     // check device
     useEffect(() => {
@@ -116,6 +115,7 @@ const useClient = () => {
                     if (payloadId === 3) updated[transportId].streaming = false;
                     if (payloadId === 3) updated[transportId].screenStream = undefined;
                     if (payloadId === 4) updated[transportId].screenAudioStream = undefined;
+                    if (payloadId === 4) updated[transportId].streamingAudio = undefined;
 
                     return { ...updated };
                 });
@@ -130,7 +130,7 @@ const useClient = () => {
                 if (payloadId === 2) updated[transportId].microphoneStream = stream;
                 // Only report that screenshare available
                 if (payloadId === 3) updated[transportId].streaming = true;
-                //if (payloadId === 4) updated[transportId].screenAudioStream = stream;
+                if (payloadId === 4) updated[transportId].streamingAudio = true;
 
                 return { ...updated };
             });
@@ -180,27 +180,7 @@ const useClient = () => {
         }
     }, [microphoneStream, sendStream, sendTransportRef.current]);
 
-    // produce screen stream
-    useEffect(() => {
-        if (screenStream && sendStream) {
-            const vid = screenStream.getVideoTracks()[0]
-            const audio = screenStream.getAudioTracks()[0]
-            console.log(vid, audio)
-            sendStream(new MediaStream([vid]), 3).then(() => {
-                console.log("Added screen video")
-                socket.emit("addstream", 3)
-                if (audio) {
-                    sendStream(new MediaStream([audio]), 4).then(() => {
-                        console.log("Added screen audio")
 
-                        socket.emit("addstream", 4)
-                    })
-                }
-            })
-
-
-        }
-    }, [screenStream, sendStream]);
 
     // 6. Participant Sync
     useEffect(() => {
@@ -302,11 +282,12 @@ const useClient = () => {
         nickname,
         participants, setParticipants,
         connected,
-        screenStream, setScreenStream,
         hasAudio, hasVideo,
         viewedParticipant, setViewedParticipant,
         closeRef,
-        getStreamRef
+        getStreamRef,
+        sendStream,
+        screenStream, setScreenStream
     }
 }
 

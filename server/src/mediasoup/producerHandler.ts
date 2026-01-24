@@ -19,6 +19,7 @@ const producerHandler = (
     // 1. Create Transport logic
     const onCreateProducerTransport = async (_: any, cb: any) => {
         try {
+            console.log("Creating new producer transport")
             const { transport: newTransport, params } = await createTransport(router, LISTEN_IPS);
             transport = newTransport;
 
@@ -60,7 +61,6 @@ const producerHandler = (
 
         try {
             const producer = await transport.produce({ rtpParameters, kind, appData });
-            console.log("Producer appdata: ", appData)
             const payloadId = appData.payloadId;
             // Store the producer in our record
             producers[transport.id].producers[payloadId] = producer;

@@ -1,5 +1,5 @@
 import { Device } from "mediasoup-client"
-import type { AppData, Consumer, MediaKind, RtpParameters, Transport, TransportOptions } from "mediasoup-client/types"
+import type { AppData, Consumer, MediaKind, ProducerCodecOptions, ProducerOptions, RtpCodecCapability, RtpParameters, Transport, TransportOptions } from "mediasoup-client/types"
 import type { Socket } from "socket.io-client"
 
 const transports: Record<string, Transport> = {}
@@ -11,7 +11,7 @@ const closeAllTransport = () => {
     }
 }
 
-const createSendTransport = (socket: Socket, device: Device, onCreateTransport: (transport: Transport) => void): Promise<(stream: MediaStream, payloadId: number) => Promise<void>> => {
+const createSendTransport = (socket: Socket, device: Device, onCreateTransport: (transport: Transport) => void): Promise<(stream: MediaStream, payloadId: number, codec?: RtpCodecCapability, codecOptions?: ProducerCodecOptions) => Promise<void>> => {
     return new Promise((resolve) => {
         let sending = false;
         socket.emit("createProducerTransport", {}, async (params: TransportOptions<AppData>) => {
@@ -29,7 +29,7 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
             onCreateTransport(transport)
 
             // return addStream function
-            resolve(async (stream, payloadId) => {
+            resolve(async (stream, payloadId, codec, codecOptions) => {
                 return new Promise((done) => {
                     const send = async () => {
                         // if currently sending, return and try again later
@@ -43,12 +43,19 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
 
                         const track = stream.getTracks()[0];
 
-                        const producer = await transport.produce({
+                        const options: ProducerOptions = {
                             track: track,
                             appData: {
                                 payloadId: payloadId
                             }
-                        })
+                        };
+
+                        options.codec = codec ? codec : undefined
+                        options.codecOptions = codecOptions ? codecOptions : undefined
+
+                        console.log("Producing with options: ", options)
+
+                        const producer = await transport.produce(options)
 
                         // if track ended, close the producer
                         track.onended = () => {
@@ -117,6 +124,15 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: 
                             consumer.on("@close", () => {
                                 onClose();
                             })
+
+                            const onConClose = (consumerId: string) => {
+                                if (consumerId == consumer.id) {
+                                    onClose();
+                                }
+                            }
+
+
+                            socket.on("conclose", onConClose)
 
                             resolveStream({
                                 stream: new MediaStream([consumer.track]), close: () => {
