@@ -166,7 +166,7 @@ const useClient = () => {
     useEffect(() => {
         if (cameraStream && sendStream && sendTransportRef.current) {
             const { codec } = getCodecOption("VP9")
-            sendStream(cameraStream, 1, codec, { videoGoogleMaxBitrate: 10000, videoGoogleMinBitrate: 1000, videoGoogleStartBitrate: 2000 }).then(() => {
+            sendStream(cameraStream, 1, codec, { videoGoogleMaxBitrate: 10000, videoGoogleMinBitrate: 1000, videoGoogleStartBitrate: 15000 }).then(() => {
                 console.log("Sending camera stream")
                 socket.emit("addstream", 1)
             })
@@ -179,17 +179,13 @@ const useClient = () => {
                 kind: 'audio',
                 mimeType: 'audio/opus',
                 clockRate: 48000,
-                channels: 1,
+                channels: 2,
                 preferredPayloadType: 111,
                 parameters: {
-                    'maxaveragebitrate': 64000,
+                    'maxaveragebitrate': 16000,
                     'usedtx': 1,
                     'useinbandfec': 1
                 }
-            }, {
-                opusDtx: true,
-                opusFec: true,
-                opusStereo: false
             }).then(() => {
                 console.log("Sending microphone stream")
                 socket.emit("addstream", 2)
