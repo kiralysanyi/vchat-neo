@@ -12,86 +12,19 @@ import { ExtendedSocket } from "./types/ExtendedSocket";
 import cors from "cors";
 import { Meeting } from "./types/Meeting";
 import * as fs from "fs";
+import roomHandler from "./mediasoup/roomHandler";
 
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, { cors: { origin: "*" } });
 
-const producerTransports: Record<string, ExtendedProducer> = {};
-
 const meetings: Record<string, Meeting> = {};
 
 app.use(cors({ origin: "*" }))
 
 createWorker().then(async (worker) => {
-    const router = await createRouter(worker)
-
     io.on("connection", async (socket: ExtendedSocket) => {
-
-        producerHandler(router, socket, producerTransports, (transportId) => {
-            socket.on("disconnect", () => {
-                delete producerTransports[transportId];
-            })
-        }, (transportId, payloadId) => {
-            // new stream
-            if (socket.meetid) {
-                if (meetings[socket.meetid]) {
-                    switch (payloadId) {
-                        case 1:
-                            meetings[socket.meetid].participants[transportId].audio = true;
-                            break;
-
-                        case 2:
-                            meetings[socket.meetid].participants[transportId].video = true;
-                            break;
-
-                        case 3:
-                            meetings[socket.meetid].participants[transportId].sVideo = true;
-                            break;
-
-                        case 4:
-                            meetings[socket.meetid].participants[transportId].sAudio = true;
-                            break;
-
-                        default:
-                            break;
-                    }
-                }
-            }
-        }, (transportId: string, payloadId: number) => {
-            // stream removed
-
-            if (socket.meetid) {
-                if (meetings[socket.meetid] && meetings[socket.meetid].participants[transportId]) {
-                    switch (payloadId) {
-                        case 1:
-                            meetings[socket.meetid].participants[transportId].audio = false;
-                            break;
-
-                        case 2:
-                            meetings[socket.meetid].participants[transportId].video = false;
-                            break;
-
-                        case 3:
-                            meetings[socket.meetid].participants[transportId].sVideo = false;
-                            break;
-
-                        case 4:
-                            meetings[socket.meetid].participants[transportId].sAudio = false;
-                            break;
-
-                        default:
-                            break;
-                    }
-                }
-            }
-        });
-
-        consumerHandler(router, socket, producerTransports, (transportId, accept, deny) => {
-            accept();
-        })
-
         //meeting related stuff
 
         socket.on("join", (meetingId: string, transportId: string, nickname) => {
@@ -99,6 +32,18 @@ createWorker().then(async (worker) => {
                 console.error("Meeting not found: ", meetingId)
                 return;
             }
+
+            const router = meetings[meetingId].router;
+
+            roomHandler(router, socket, meetings, meetingId);
+
+            // handle rtpcapabilities request
+            const onGetCapabilities = (_: any, cb: any) => {
+                console.log("GetCapabilities")
+                cb(router.rtpCapabilities)
+            }
+
+            socket.on("getCapabilities", onGetCapabilities);
 
             socket.meetid = meetingId;
 
@@ -147,7 +92,6 @@ createWorker().then(async (worker) => {
             }
 
             socket.on("consumeReady", onConsumeReady)
-
             const onLeave = () => {
                 socket.off("addstream", onAddStream)
                 socket.off("consumeReady", onConsumeReady)
@@ -168,8 +112,11 @@ createWorker().then(async (worker) => {
 
             socket.once("disconnect", onLeave)
             socket.once("leave", onLeave)
+
+            socket.emit("serverReady")
         })
 
+        // detach handlers if any
         socket.on("disconnect", () => {
             if (socket.detachConsumer) {
                 console.log("Detaching consumer handler from", socket.id)
@@ -185,14 +132,9 @@ createWorker().then(async (worker) => {
         console.log("Connected socket")
     })
 
-    app.get("/api/router/capabilities", (req, res) => {
-        res.json({
-            rtpCapabilities: router.rtpCapabilities
-        })
-    })
 
     // create meeting
-    app.post("/api/meeting/:id", (req, res) => {
+    app.post("/api/meeting/:id", async (req, res) => {
         const id = req.params.id;
 
         if (id == "join" || id.includes(' ')) {
@@ -209,7 +151,9 @@ createWorker().then(async (worker) => {
 
         meetings[id] = {
             id: id,
-            participants: {}
+            participants: {},
+            producerTransports: {},
+            router: await createRouter(worker)
         }
 
         return res.status(201).json({
@@ -228,7 +172,10 @@ createWorker().then(async (worker) => {
             })
         }
 
-        return res.json(meeting)
+        return res.json({
+            id: meeting.id,
+            participants: meeting.participants
+        })
     })
 
     // handle non existent pages

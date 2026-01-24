@@ -1,11 +1,10 @@
 import { Device } from "mediasoup-client";
-import type { ConnectionState, ProducerCodecOptions, RtpCodecCapability, Transport } from "mediasoup-client/types";
+import type { ConnectionState, ProducerCodecOptions, RtpCapabilities, RtpCodecCapability, Transport } from "mediasoup-client/types";
 import config from "../config";
 import { useContext, useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { checkCamera } from "../capture/getCamera";
 import { checkMicrophone } from "../capture/getMicrophone";
-import getRouterCapabilities from "../mediasoup/getRouterCapabilities";
 import { createRecvTransport, createSendTransport } from "../mediasoup/utils";
 import { DataContext } from "../providers/DataProvider";
 import socket from "../socket";
@@ -78,11 +77,13 @@ const useClient = () => {
         let isMounted = true;
         const dev = new Device();
 
-        getRouterCapabilities().then(async (capabilities) => {
-            if (!isMounted) return;
-            await dev.load({ routerRtpCapabilities: capabilities });
-            setDevice(dev);
-        }).catch(console.error);
+        socket.once("serverReady", () => {
+            socket.emit("getCapabilities", {}, async (capabilities: RtpCapabilities) => {
+                if (!isMounted) return;
+                await dev.load({ routerRtpCapabilities: capabilities });
+                setDevice(dev);
+            })
+        })
 
         return () => { isMounted = false; };
     }, [connected]);
