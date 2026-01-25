@@ -19,7 +19,7 @@ const Index = () => {
             <h1>Join/Create Meeting</h1>
             <div className="form-group">
                 <label htmlFor="id">Meeting id</label>
-                <input disabled={inputsDisabled} value={id} onChange={(ev) => { setId(ev.target.value) }} type="text" placeholder="ID" />
+                <input autoComplete="off" disabled={inputsDisabled} value={id} onChange={(ev) => { setId(ev.target.value) }} type="text" placeholder="ID" />
             </div>
             <button disabled={inputsDisabled} onClick={joinOrCreate}>Join/Create</button>
         </div>

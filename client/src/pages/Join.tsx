@@ -145,6 +145,10 @@ const Join = () => {
         }
     }
 
+    // password manager workaround, we dont want that garbage here
+    const [inpType, setInpType] = useState("text")
+
+
     return <div className="page">
         <div className="mx-auto my-auto flex flex-col-reverse gap-4 sm:flex-row">
             <div className="flex flex-col gap-4">
@@ -157,15 +161,15 @@ const Join = () => {
                 </div>
                 <div className="form-group">
                     <label htmlFor="nickname">Nickname</label>
-                    <input type="text" name="nickname" id="nickname" value={newNickname} onChange={(ev) => { setNewNickname(ev.target.value) }} />
+                    <input type="text" name="nickname" id="nickname" autoComplete="off" value={newNickname} onChange={(ev) => { setNewNickname(ev.target.value) }} />
                 </div>
                 {newMeet && <div className="form-group">
                     <label htmlFor="password">Set password (leave empty for none)</label>
-                    <input value={password} onChange={(ev) => setPassword(ev.target.value)} autoComplete="disabled" type="password" id="password" name="password" placeholder="Password" />
+                    <input value={password} onChange={(ev) => setPassword(ev.target.value)} onFocus={() => setInpType("password")} autoComplete="off" type={inpType} id="password" name="password" placeholder="Password" />
                 </div>}
                 {authNeeded && <div className="form-group">
                     <label htmlFor="srvPass">Server password (required to create meeting)</label>
-                    <input type="password" id="srvPass" name="srvPass" value={serverPass} onChange={(ev) => setServerPass(ev.target.value)} />
+                    <input type={inpType} onFocus={() => setInpType("password")} id="srvPass" name="srvPass" autoComplete="off" value={serverPass} onChange={(ev) => setServerPass(ev.target.value)} />
                 </div>}
                 <button onClick={join}>Join</button>
             </div>
