@@ -4,7 +4,7 @@ import http from "http"
 import { Server } from "socket.io";
 import { createWorker } from "mediasoup";
 import createRouter from "./mediasoup/createRouter";
-import { PORT } from "./config";
+import { PORT, SERVERPASS } from "./config";
 import producerHandler from "./mediasoup/producerHandler";
 import { ExtendedProducer } from "./types/ExtendedProducer";
 import consumerHandler from "./mediasoup/consumerHandler";
@@ -13,6 +13,7 @@ import cors from "cors";
 import { Meeting } from "./types/Meeting";
 import * as fs from "fs";
 import roomHandler from "./mediasoup/roomHandler";
+import createWorkers from "./mediasoup/createWorkers";
 
 const app = express();
 const server = http.createServer(app);
@@ -24,7 +25,7 @@ const meetings: Record<string, Meeting> = {};
 app.use(cors({ origin: "*" }))
 app.use(express.json())
 
-createWorker().then(async (worker) => {
+createWorkers().then(async (workers) => {
     io.on("connection", async (socket: ExtendedSocket) => {
         //meeting related stuff
 
@@ -158,16 +159,27 @@ createWorker().then(async (worker) => {
         console.log("Connected socket")
     })
 
+    // todo: add actual load balancing
+    let lastSelectedWorker = 0;
 
     // create meeting
     app.post("/api/meeting/:id", async (req, res) => {
         const id = req.params.id;
         const password = req.body.password ? req.body.password : undefined;
+        const srvPass = req.body.srvPass ? req.body.srvPass : undefined;
 
         if (id == "join" || id.includes(' ')) {
             return res.status(400).json({
                 error: "Invalid id"
             })
+        }
+
+        if (SERVERPASS != undefined) {
+            if (SERVERPASS != srvPass) {
+                return res.status(401).json({
+                    error: "Wrong password"
+                })
+            }
         }
 
         if (meetings[id]) {
@@ -176,17 +188,35 @@ createWorker().then(async (worker) => {
             })
         }
 
+        // select worker to use
+        lastSelectedWorker++;
+        if (lastSelectedWorker > workers.length - 1) {
+            lastSelectedWorker = 0;
+        }
+
         meetings[id] = {
             id: id,
             participants: {},
             producerTransports: {},
-            router: await createRouter(worker),
+            router: await createRouter(workers[lastSelectedWorker]),
             password: password
         }
 
         return res.status(201).json({
             message: "Created"
         })
+    })
+
+    app.get("/api/needsauth", (req, res) => {
+        if (SERVERPASS != undefined) {
+            return res.json({
+                required: true
+            })
+        } else {
+            return res.json({
+                required: false
+            })
+        }
     })
 
     //get meeting info

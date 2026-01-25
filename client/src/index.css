@@ -69,6 +69,10 @@ h1 {
   @apply w-full h-full;
 }
 
+.participant video {
+  @apply w-full h-full;
+}
+
 .name {
   @apply absolute bottom-2 left-2 p-2 border-2 border-gray-400 rounded-full backdrop-blur-2xl bg-black/20;
 }
