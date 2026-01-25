@@ -53,6 +53,32 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                         options.codec = codec ? codec : undefined
                         options.codecOptions = codecOptions ? codecOptions : undefined
 
+
+                        if (codec) {
+                            if (codec.mimeType == "video/VP8") {
+                                options.encodings = [
+                                    {
+                                        rid: "r0",
+                                        maxBitrate: 150000,
+                                        scaleResolutionDownBy: 4,
+                                        scalabilityMode: "L1T3"
+                                    },
+                                    {
+                                        rid: "r1",
+                                        maxBitrate: 500000,
+                                        scaleResolutionDownBy: 2,
+                                        scalabilityMode: "L1T3"
+                                    },
+                                    {
+                                        rid: "r2",
+                                        maxBitrate: 2000000,
+                                        scaleResolutionDownBy: 1,
+                                        scalabilityMode: "L1T3"
+                                    }
+                                ]
+                            }
+                        }
+
                         console.log("Producing with options: ", options)
 
                         const producer = await transport.produce(options)
@@ -115,7 +141,7 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: 
                                 id: data.id,
                                 producerId: data.producerId,
                                 kind: data.kind,
-                                rtpParameters: data.rtpParameters,
+                                rtpParameters: data.rtpParameters
                             });
 
                             consumers[consumer.id] = consumer;

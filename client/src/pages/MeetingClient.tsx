@@ -76,7 +76,7 @@ const MeetingClient = () => {
             const vid = screenStream.getVideoTracks()[0]
             const audio = screenStream.getAudioTracks()[0]
             console.log(vid, audio)
-            const { codec, codecOptions } = getCodecOption(streamOptions.codec)
+            const { codec, codecOptions } = getCodecOption(streamOptions.codec, streamOptions.highBitrate)
             sendStream(new MediaStream([vid]), 3, codec, codecOptions).then(() => {
                 console.log("Added screen video")
                 socket.emit("addstream", 3)
@@ -240,6 +240,11 @@ const MeetingClient = () => {
                             <option value="30">30</option>
                             <option value="60">60</option>
                         </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="high-bitrate">Increase bitrate</label>
+                        <input type="checkbox" checked={streamOptions.highBitrate} onChange={(ev) => streamOptions.setHighBitrate(ev.target.checked)} />
                     </div>
 
                     <button onClick={() => setShowScreenOptions(false)}>Cancel</button>
