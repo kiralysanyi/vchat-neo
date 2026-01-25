@@ -8,6 +8,7 @@ import { checkMicrophone, getMicrophone } from "../capture/getMicrophone";
 const Join = () => {
     const [meetingInfo, setMeetingInfo] = useState<{ id: string, participants: Record<string, {}> } | null>(null)
     const params = useParams();
+    document.title = "Join - " + params.id;
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const navigate = useNavigate();
 

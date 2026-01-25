@@ -6,6 +6,8 @@ const Index = () => {
     const [inputsDisabled, setInputsDisabled] = useState(false)
     const navigate = useNavigate();
 
+    document.title = "VChat-Neo"
+
     const joinOrCreate = () => {
         setInputsDisabled(true);
 

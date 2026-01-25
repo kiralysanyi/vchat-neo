@@ -72,10 +72,8 @@ const MeetingClient = () => {
     };
 
     // produce screen stream
-    const [streaming, setStreaming] = useState(false)
     useEffect(() => {
-        if (screenStream && sendStream && !streaming) {
-            setStreaming(true)
+        if (screenStream && sendStream) {
             const vid = screenStream.getVideoTracks()[0]
             const audio = screenStream.getAudioTracks()[0]
             console.log(vid, audio)
@@ -98,6 +96,8 @@ const MeetingClient = () => {
                 }
             })
         }
+
+        return () => { }
     }, [screenStream, sendStream, streamOptions]);
 
 
@@ -108,7 +108,6 @@ const MeetingClient = () => {
                 track.onended ? track.onended(new Event("ended")) : null
             })
             setScreenStream(null);
-            setStreaming(false);
         } else {
             setShowScreenOptions(true)
         }
