@@ -1,4 +1,4 @@
-name: screenshare
+name: vchat
 
 services:
   server:
