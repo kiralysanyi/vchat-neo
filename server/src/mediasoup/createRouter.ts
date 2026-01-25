@@ -8,6 +8,8 @@ const createRouter = async (worker: Worker) => {
             clockRate: 90000,
             parameters: {
                 'x-google-start-bitrate': 15000,
+                'profile-id': 0,
+                'scalabilityMode': 'L3T3'
             },
             rtcpFeedback: [
                 { type: 'nack' },
@@ -39,7 +41,8 @@ const createRouter = async (worker: Worker) => {
             mimeType: 'video/VP8',
             clockRate: 90000,
             parameters: {
-                'x-google-start-bitrate': 15000
+                'x-google-start-bitrate': 15000,
+                'scalabilityMode': 'L1T3'
             },
             rtcpFeedback: [
                 { type: 'nack' },
@@ -53,7 +56,10 @@ const createRouter = async (worker: Worker) => {
             kind: 'video',
             mimeType: 'video/AV1',
             clockRate: 90000,
-            parameters: {},
+            parameters: {
+                'profile-id': 0,
+                'scalabilityMode': 'L3T3'
+            },
             rtcpFeedback: [
                 { type: 'nack' },
                 { type: 'nack', parameter: 'pli' },

@@ -16,8 +16,9 @@ const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCod
                 mimeType: 'video/VP9',
                 clockRate: 90000,
                 parameters: {
-                    'x-google-start-bitrate': 15000,
-                },
+                    'profile-id': 0,
+                    'scalabilityMode': 'L3T3'
+                }
             }
 
             break;
@@ -28,7 +29,9 @@ const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCod
                 kind: 'video',
                 mimeType: 'video/VP8',
                 clockRate: 90000,
-                parameters: {}
+                parameters: {
+                    'scalabilityMode': 'L1T3'
+                }
             }
 
             break;
@@ -80,7 +83,10 @@ const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCod
                 kind: 'video',
                 mimeType: 'video/VP9',
                 clockRate: 90000,
-                parameters: {},
+                parameters: {
+                    'profile-id': 0,
+                    'scalabilityMode': 'L3T3'
+                },
             }
             break;
     }
