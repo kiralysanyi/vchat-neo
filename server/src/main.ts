@@ -13,6 +13,7 @@ import cors from "cors";
 import { Meeting } from "./types/Meeting";
 import * as fs from "fs";
 import roomHandler from "./mediasoup/roomHandler";
+import createWorkers from "./mediasoup/createWorkers";
 
 const app = express();
 const server = http.createServer(app);
@@ -24,7 +25,7 @@ const meetings: Record<string, Meeting> = {};
 app.use(cors({ origin: "*" }))
 app.use(express.json())
 
-createWorker().then(async (worker) => {
+createWorkers().then(async (workers) => {
     io.on("connection", async (socket: ExtendedSocket) => {
         //meeting related stuff
 
@@ -158,6 +159,8 @@ createWorker().then(async (worker) => {
         console.log("Connected socket")
     })
 
+    // todo: add actual load balancing
+    let lastSelectedWorker = 0;
 
     // create meeting
     app.post("/api/meeting/:id", async (req, res) => {
@@ -176,11 +179,17 @@ createWorker().then(async (worker) => {
             })
         }
 
+        // select worker to use
+        lastSelectedWorker++;
+        if (lastSelectedWorker > workers.length - 1) {
+            lastSelectedWorker = 0;
+        }
+
         meetings[id] = {
             id: id,
             participants: {},
             producerTransports: {},
-            router: await createRouter(worker),
+            router: await createRouter(workers[lastSelectedWorker]),
             password: password
         }
 

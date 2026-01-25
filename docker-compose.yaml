@@ -11,3 +11,4 @@ services:
     environment:
       - LISTEN_IPS=127.0.0.1,192.168.1.165 # ips to announce for clients (should be accessable from all clients, or else you will get blank video)
       - PORT=8080
+      - WORKERS=2 # count of worker threads, should not be bigger then cpu core/thread count
