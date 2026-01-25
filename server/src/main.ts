@@ -4,7 +4,7 @@ import http from "http"
 import { Server } from "socket.io";
 import { createWorker } from "mediasoup";
 import createRouter from "./mediasoup/createRouter";
-import { PORT } from "./config";
+import { PORT, SERVERPASS } from "./config";
 import producerHandler from "./mediasoup/producerHandler";
 import { ExtendedProducer } from "./types/ExtendedProducer";
 import consumerHandler from "./mediasoup/consumerHandler";
@@ -166,11 +166,20 @@ createWorkers().then(async (workers) => {
     app.post("/api/meeting/:id", async (req, res) => {
         const id = req.params.id;
         const password = req.body.password ? req.body.password : undefined;
+        const srvPass = req.body.srvPass ? req.body.srvPass : undefined;
 
         if (id == "join" || id.includes(' ')) {
             return res.status(400).json({
                 error: "Invalid id"
             })
+        }
+
+        if (SERVERPASS != undefined) {
+            if (SERVERPASS != srvPass) {
+                return res.status(401).json({
+                    error: "Wrong password"
+                })
+            }
         }
 
         if (meetings[id]) {
@@ -196,6 +205,18 @@ createWorkers().then(async (workers) => {
         return res.status(201).json({
             message: "Created"
         })
+    })
+
+    app.get("/api/needsauth", (req, res) => {
+        if (SERVERPASS != undefined) {
+            return res.json({
+                required: true
+            })
+        } else {
+            return res.json({
+                required: false
+            })
+        }
     })
 
     //get meeting info

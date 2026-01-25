@@ -27,7 +27,11 @@ const Join = () => {
     const [hasVideo, setHasVideo] = useState(false);
 
     const [newMeet, setNewMeet] = useState(false);
-    const [password, setPassword] = useState("")
+    const [password, setPassword] = useState("");
+
+    const [error, setError] = useState<string>()
+    const [serverPass, setServerPass] = useState("");
+    const [authNeeded, setAuthNeeded] = useState(false);
 
     useEffect(() => {
         fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json" } }).then(async (res) => {
@@ -36,6 +40,13 @@ const Join = () => {
                 setMeetingInfo(info)
             } else {
                 setNewMeet(true);
+                // check if auth needed
+                fetch(config.serverUrl + "/api/needsauth", { method: "GET", headers: { "Content-type": "application/json" } }).then(async (res) => {
+                    let data = await res.json()
+                    if (data.required == true) {
+                        setAuthNeeded(true)
+                    }
+                })
             }
         })
 
@@ -55,11 +66,15 @@ const Join = () => {
             if (password.length > 0) {
                 body.password = password;
             }
+
+            body.srvPass = serverPass;
+
             fetch(config.serverUrl + "/api/meeting/" + params.id, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
             }).then(async (res) => {
+                const data = await res.json();
                 if (res.status == 201) {
                     //created
                     if (setNickname) {
@@ -71,7 +86,10 @@ const Join = () => {
                         navigate("/meeting/" + params.id)
                     }
                 } else {
-                    console.error("Failed to create room")
+                    console.error("Failed to create room", data)
+                    if (res.status == 401) {
+                        setError("Wrong server password")
+                    }
                 }
             })
         } else {
@@ -131,6 +149,7 @@ const Join = () => {
         <div className="mx-auto my-auto flex flex-col-reverse gap-4 sm:flex-row">
             <div className="flex flex-col gap-4">
                 <h1>{params.id}</h1>
+                {error && <span className="bg-red-900 p-3">{error}</span>}
                 {meetingInfo ? <span>Participants: {Object.keys(meetingInfo.participants).length}</span> : ""}
                 <div className="flex flex-row gap-4">
                     {hasVideo && <button onClick={toggleCamera}>{cameraStream ? "Disable Camera" : "Enable camera"}</button>}
@@ -143,6 +162,10 @@ const Join = () => {
                 {newMeet && <div className="form-group">
                     <label htmlFor="password">Set password (leave empty for none)</label>
                     <input value={password} onChange={(ev) => setPassword(ev.target.value)} autoComplete="disabled" type="password" id="password" name="password" placeholder="Password" />
+                </div>}
+                {authNeeded && <div className="form-group">
+                    <label htmlFor="srvPass">Server password (required to create meeting)</label>
+                    <input type="password" id="srvPass" name="srvPass" value={serverPass} onChange={(ev) => setServerPass(ev.target.value)} />
                 </div>}
                 <button onClick={join}>Join</button>
             </div>
