@@ -24,6 +24,8 @@ const useClient = () => {
     const navigate = useNavigate();
     const params = useParams();
 
+    document.title = "Meeting - " + params.id
+
     const [participants, setParticipants] = useState<Record<string, Participant>>({});
     const [device, setDevice] = useState<Device | null>(null);
     const [sendStream, setSendStream] = useState<((stream: MediaStream, payloadId: number, codec?: RtpCodecCapability, codecOptions?: ProducerCodecOptions) => Promise<void>) | null>(null);
