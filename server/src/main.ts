@@ -46,6 +46,16 @@ createWorkers().then(async (workers) => {
                 return;
             }
 
+            if (socket.detachConsumer) {
+                console.log("Detaching consumer handler from", socket.id)
+                socket.detachConsumer();
+            }
+
+            if (socket.detachProducer) {
+                console.log("Detaching producer handler from", socket.id)
+                socket.detachProducer();
+            }
+
             if (meetings[mId].password) {
                 if (!password) {
                     socket.emit("auth_required")
