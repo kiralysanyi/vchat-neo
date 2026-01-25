@@ -165,6 +165,16 @@ createWorkers().then(async (workers) => {
                     delete meetings[meetingId].participants[transportId];
                     socket.off("disconnect", onLeave)
                     socket.off("leave", onLeave)
+
+                    if (socket.detachConsumer) {
+                        console.log("Detaching consumer handler from", socket.id)
+                        socket.detachConsumer();
+                    }
+
+                    if (socket.detachProducer) {
+                        console.log("Detaching producer handler from", socket.id)
+                        socket.detachProducer();
+                    }
                 }
 
                 socket.on("disconnect", onLeave)
