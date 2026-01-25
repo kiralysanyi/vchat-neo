@@ -303,8 +303,10 @@ const MeetingClient = () => {
             </div>}
             {passError && <div className="fixed top-0 left-0 w-full h-full z-40 bg-gray-900 flex flex-col justify-center align-middle p-3 gap-2">
                 <h1>{passError}</h1>
-                <input value={password} onChange={(ev) => setPassword(ev.target.value)} type="password" placeholder="Password" />
-                <button onClick={authenticate}>Join</button>
+                <div className="form-group mr-auto gap-2 w-96 max-w-full">
+                    <input value={password} onChange={(ev) => setPassword(ev.target.value)} type="password" placeholder="Password" />
+                    <button onClick={authenticate}>Join</button>
+                </div>
             </div>}
             {!connected && <div className="fixed top-0 left-0 w-full h-full z-50 bg-gray-900 flex flex-col justify-center align-middle p-3 gap-2">
                 <h1>Disconnected from server</h1>
