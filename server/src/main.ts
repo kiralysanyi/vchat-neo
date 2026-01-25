@@ -69,7 +69,7 @@ createWorkers().then(async (workers) => {
             }
 
             // room cleaning reset
-            clearInterval(meetings[mId].timeout)
+            clearTimeout(meetings[mId].timeout)
             meetings[mId].timeout = setTimeout(() => {
                 cleanMeeting(mId)
             }, (60 * 1000) * CLEANUP_INTERVAL)
@@ -153,7 +153,7 @@ createWorkers().then(async (workers) => {
                 socket.on("consumeReady", onConsumeReady)
                 const onLeave = () => {
                     // room cleaning reset
-                    clearInterval(meetings[mId].timeout)
+                    clearTimeout(meetings[mId].timeout)
                     meetings[mId].timeout = setTimeout(() => {
                         cleanMeeting(mId)
                     }, (60 * 1000) * CLEANUP_INTERVAL)
