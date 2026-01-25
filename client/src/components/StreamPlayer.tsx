@@ -21,7 +21,8 @@ const StreamPlayer = ({ stream, volume }: { stream: MediaStream, volume?: number
 
     useEffect(() => {
         if (audioRef.current) {
-            audioRef.current.volume = volume ? volume : 1
+            console.log("Change volume: ", volume)
+            audioRef.current.volume = volume != undefined ? volume : 1
         }
     }, [volume, audioRef]);
 

@@ -1,11 +1,11 @@
 import type { ProducerCodecOptions, RtpCodecCapability } from "mediasoup-client/types"
 
-const getCodecOption = (codecName: string): { codec: RtpCodecCapability, codecOptions: ProducerCodecOptions } => {
+const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCodecCapability, codecOptions: ProducerCodecOptions } => {
     let codec: RtpCodecCapability;
     let codecOptions: ProducerCodecOptions = {
-        videoGoogleMaxBitrate: 3000000,
-        videoGoogleMinBitrate: 500000,
-        videoGoogleStartBitrate: 1000000
+        videoGoogleMaxBitrate: highQuality ? 5000000 : 3000000,
+        videoGoogleMinBitrate: highQuality ? 500000 : 200000,
+        videoGoogleStartBitrate: highQuality ? 1000000 : 200000
     }
 
     switch (codecName) {
@@ -23,15 +23,12 @@ const getCodecOption = (codecName: string): { codec: RtpCodecCapability, codecOp
             break;
 
         case "VP8":
-
             codec = {
                 preferredPayloadType: 96,
                 kind: 'video',
                 mimeType: 'video/VP8',
                 clockRate: 90000,
-                parameters: {
-                    'x-google-start-bitrate': 15000,
-                }
+                parameters: {}
             }
 
             break;
@@ -83,9 +80,7 @@ const getCodecOption = (codecName: string): { codec: RtpCodecCapability, codecOp
                 kind: 'video',
                 mimeType: 'video/VP9',
                 clockRate: 90000,
-                parameters: {
-                    'x-google-start-bitrate': 15000,
-                },
+                parameters: {},
             }
             break;
     }

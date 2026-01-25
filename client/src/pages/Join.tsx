@@ -127,7 +127,7 @@ const Join = () => {
     }
 
     return <div className="page">
-        <div className="mx-auto my-auto flex flex-row gap-4">
+        <div className="mx-auto my-auto flex flex-col-reverse gap-4 sm:flex-row">
             <div className="flex flex-col gap-4">
                 <h1>{params.id}</h1>
                 {meetingInfo ? <span>Participants: {Object.keys(meetingInfo.participants).length}</span> : ""}
