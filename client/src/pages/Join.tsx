@@ -183,7 +183,7 @@ const Join = () => {
                     <label htmlFor="srvPass">Server password (required to create meeting)</label>
                     <input type={inpType} onFocus={() => setInpType("password")} id="srvPass" name="srvPass" autoComplete="off" value={serverPass} onChange={(ev) => setServerPass(ev.target.value)} />
                 </div>}
-                <button onClick={join}>Join</button>
+                <button onClick={join}>{newMeet ? "Create" : "Join"}</button>
             </div>
             <video ref={videoRef} autoPlay className="bg-black" width={400} height={300}></video>
         </div>

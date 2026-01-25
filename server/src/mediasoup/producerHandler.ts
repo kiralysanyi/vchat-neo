@@ -20,6 +20,10 @@ const producerHandler = (
     const onCreateProducerTransport = async (_: any, cb: any) => {
         try {
             console.log("Creating new producer transport")
+            if (router.closed) {
+                console.error("Router closed for some reason")
+                cb({error: "Router closed"})
+            }
             const { transport: newTransport, params } = await createTransport(router, LISTEN_IPS);
             transport = newTransport;
 

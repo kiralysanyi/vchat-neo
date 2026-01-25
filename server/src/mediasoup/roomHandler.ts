@@ -8,9 +8,7 @@ import producerHandler from "./producerHandler";
 const roomHandler = (router: Router, socket: ExtendedSocket, meetings: Record<string, Meeting>, meetingId: string) => {
     // attach handlers
     producerHandler(router, socket, meetings[meetingId].producerTransports, (transportId) => {
-        socket.on("disconnect", () => {
-            delete meetings[meetingId].producerTransports[transportId];
-        })
+        // on transport create
     }, (transportId, payloadId) => {
         // new stream
         if (meetingId) {
