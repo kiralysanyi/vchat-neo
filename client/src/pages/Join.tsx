@@ -34,6 +34,11 @@ const Join = () => {
     const [authNeeded, setAuthNeeded] = useState(false);
 
     useEffect(() => {
+        const savedNickname = localStorage.getItem("nickname");
+        if (savedNickname) {
+            setNewNickname(savedNickname)
+        }
+
         fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json" } }).then(async (res) => {
             if (res.status == 200) {
                 const info = await res.json();
@@ -61,6 +66,13 @@ const Join = () => {
     }, [])
 
     const join = () => {
+        if (newNickname.length < 4) {
+            setError("Nickname should be at least 4 characters long")
+            return;
+        }
+
+        localStorage.setItem("nickname", newNickname);
+
         if (newMeet) {
             const body: Record<string, string> = {}
             if (password.length > 0) {
