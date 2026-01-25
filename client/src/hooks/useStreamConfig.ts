@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const useStreamConfig = () => {
     const [loaded, setLoaded] = useState(false)
@@ -32,12 +32,12 @@ const useStreamConfig = () => {
         localStorage.setItem("highBitrate", `${highBitrate}`)
     }, [loaded, fps, codec, highBitrate])
 
-    return {
+    return useMemo(() => ({
         fps, setFps,
         codec, setCodec,
         highBitrate,
         setHighBitrate
-    }
+    }), [fps, codec, highBitrate])
 }
 
 export default useStreamConfig;
