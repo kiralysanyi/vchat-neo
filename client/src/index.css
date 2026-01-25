@@ -4,7 +4,8 @@ button {
   @apply border-2 border-blue-600 rounded-sm p-2 bg-blue-600 text-white cursor-pointer;
 }
 
-input, select {
+input,
+select {
   @apply border-2 border-blue-600 rounded-sm p-2 bg-blue-950 text-white outline-0;
 }
 
@@ -40,7 +41,7 @@ h1 {
 }
 
 .participant {
-  @apply w-full sm:w-1/2 bg-gray-900 h-1/2 relative border-2 border-gray-800;
+  @apply w-full sm:w-1/2 lg:w-1/3 bg-gray-900 h-1/2 lg:h-1/3 relative border-2 border-gray-800 transition-all;
 }
 
 .player {
@@ -82,7 +83,7 @@ h1 {
 }
 
 .streams-container {
-  @apply flex flex-row w-full h-full flex-wrap;
+  @apply flex flex-row w-full h-full flex-wrap transition-all fixed top-0 left-0;
   padding-bottom: 5.5rem;
   overflow-y: auto;
 }
@@ -98,6 +99,10 @@ h1 {
   padding: 1rem;
   background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
+}
+
+.dock button {
+  @apply rounded-full;
 }
 
 .screenviewer {
@@ -160,4 +165,16 @@ h1 {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+@media (max-height: 700px) {
+  .participant {
+    @apply h-1/2 sm:w-1/2;
+  }
+}
+
+@media (max-height: 400px) {
+  .participant {
+    @apply h-full;
+  }
 }

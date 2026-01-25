@@ -69,7 +69,7 @@ createWorkers().then(async (workers) => {
             }
 
             // room cleaning reset
-            clearInterval(meetings[mId].timeout)
+            clearTimeout(meetings[mId].timeout)
             meetings[mId].timeout = setTimeout(() => {
                 cleanMeeting(mId)
             }, (60 * 1000) * CLEANUP_INTERVAL)
@@ -153,7 +153,7 @@ createWorkers().then(async (workers) => {
                 socket.on("consumeReady", onConsumeReady)
                 const onLeave = () => {
                     // room cleaning reset
-                    clearInterval(meetings[mId].timeout)
+                    clearTimeout(meetings[mId].timeout)
                     meetings[mId].timeout = setTimeout(() => {
                         cleanMeeting(mId)
                     }, (60 * 1000) * CLEANUP_INTERVAL)
@@ -165,6 +165,16 @@ createWorkers().then(async (workers) => {
                     delete meetings[meetingId].participants[transportId];
                     socket.off("disconnect", onLeave)
                     socket.off("leave", onLeave)
+
+                    if (socket.detachConsumer) {
+                        console.log("Detaching consumer handler from", socket.id)
+                        socket.detachConsumer();
+                    }
+
+                    if (socket.detachProducer) {
+                        console.log("Detaching producer handler from", socket.id)
+                        socket.detachProducer();
+                    }
                 }
 
                 socket.on("disconnect", onLeave)
