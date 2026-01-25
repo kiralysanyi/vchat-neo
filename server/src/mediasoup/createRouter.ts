@@ -21,23 +21,6 @@ const createRouter = async (worker: Worker) => {
         },
         {
             kind: 'video',
-            mimeType: 'video/H264',
-            clockRate: 90000,
-            parameters: {
-                'packetization-mode': 1,
-                'profile-level-id': '42e01f',
-                'level-asymmetry-allowed': 1
-            },
-            rtcpFeedback: [
-                { type: 'nack' },
-                { type: 'nack', parameter: 'pli' },
-                { type: 'ccm', parameter: 'fir' },
-                { type: 'goog-remb' },
-                { type: 'transport-cc' }
-            ]
-        },
-        {
-            kind: 'video',
             mimeType: 'video/VP8',
             clockRate: 90000,
             parameters: {

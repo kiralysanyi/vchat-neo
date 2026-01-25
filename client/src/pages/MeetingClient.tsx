@@ -279,7 +279,6 @@ const MeetingClient = () => {
                             <option value="VP9">VP9</option>
                             <option value="VP8">VP8</option>
                             <option value="AV1">AV1 (best quality but may increase cpu usage drastically)</option>
-                            <option value="H264">H264</option>
                         </select>
                     </div>
 
