@@ -72,13 +72,19 @@ const MeetingClient = () => {
     };
 
     // produce screen stream
+    // todo: find out why the fuck this effect is being called
     const [streaming, setStreaming] = useState(false)
     useEffect(() => {
+        console.log("Allowed to send stream: ", !streaming)
         if (screenStream && sendStream && !streaming) {
             setStreaming(true)
             const vid = screenStream.getVideoTracks()[0]
             const audio = screenStream.getAudioTracks()[0]
             console.log(vid, audio)
+            vid.addEventListener("ended", () => {
+                setStreaming(false);
+                setScreenStream(null);
+            })
             const { codec, codecOptions } = getCodecOption(streamOptions.codec, streamOptions.highBitrate)
             sendStream(new MediaStream([vid]), 3, codec, codecOptions).then(() => {
                 console.log("Added screen video")
@@ -98,7 +104,9 @@ const MeetingClient = () => {
                 }
             })
         }
-    }, [screenStream, sendStream, streamOptions]);
+
+        return () => { }
+    }, [screenStream, sendStream, streamOptions, streaming]);
 
 
     const toggleScreen = async () => {
