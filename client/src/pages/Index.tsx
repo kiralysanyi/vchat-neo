@@ -13,7 +13,7 @@ const Index = () => {
     }
 
     return <div className="page">
-        <div className="mx-auto my-auto flex flex-col gap-8">
+        <div className="mx-auto my-auto flex flex-col gap-8 p-4">
             <h1>Join/Create Meeting</h1>
             <div className="form-group">
                 <label htmlFor="id">Meeting id</label>

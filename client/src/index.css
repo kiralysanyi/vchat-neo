@@ -27,7 +27,8 @@ select:focus {
 }
 
 .page {
-  @apply w-full h-full top-0 left-0 fixed flex;
+  @apply w-full top-0 left-0 fixed flex overflow-auto;
+  height: 100dvh;
 }
 
 h1 {
@@ -39,7 +40,7 @@ h1 {
 }
 
 .participant {
-  @apply w-1/2 bg-gray-900 h-1/2 relative border-2 border-gray-800;
+  @apply w-full sm:w-1/2 bg-gray-900 h-1/2 relative border-2 border-gray-800;
 }
 
 .player {
@@ -105,6 +106,7 @@ h1 {
 
 .screenviewer .player video {
   object-fit: contain;
+  @apply w-full;
 }
 
 .loader {

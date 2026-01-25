@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { getCamera } from "../capture/getCamera";
 import { getMicrophone } from "../capture/getMicrophone";
 import type { Participant } from "../types/Participant";
 import StreamPlayer from "../components/StreamPlayer";
 import { getScreen, checkScreenSupport } from "../capture/getScreen";
-import { CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { ArrowsPointingInIcon, ArrowsPointingOutIcon, CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon, SpeakerWaveIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import useClient from "../hooks/useClient";
 import socket from "../socket";
 import useStreamConfig from "../hooks/useStreamConfig";
 import getCodecOption from "../utils/getCodecOption";
+import useWakeLock from "../hooks/useWakeLock";
 
 const MeetingClient = () => {
     const [streamVolume, setStreamVolume] = useState(1);
@@ -166,6 +167,47 @@ const MeetingClient = () => {
         }
     }
 
+    //hide controls in stream viewer
+    const [hideControls, setHideControls] = useState(false)
+
+    useEffect(() => {
+        let timeout = setTimeout(() => {
+            setHideControls(true)
+        }, 3000);
+
+        const onMove = () => {
+            clearTimeout(timeout);
+            setHideControls(false);
+            timeout = setTimeout(() => {
+                setHideControls(true)
+            }, 3000);
+        }
+
+        window.addEventListener("mousemove", onMove);
+
+        return () => {
+            window.removeEventListener("mousemove", onMove)
+        }
+    }, [])
+
+    //wakelock
+    useWakeLock();
+
+    //fullscreen viewer
+    const viewerRef = useRef<HTMLDivElement>(null)
+    const [fullscreen, setFullscreen] = useState(false)
+
+    useEffect(() => {
+        if (viewerRef.current) {
+            if (fullscreen) {
+                viewerRef.current.requestFullscreen()
+            } else {
+                document.exitFullscreen();
+            }
+        } else {
+            document.exitFullscreen();
+        }
+    }, [fullscreen])
 
     return (
         <div className="page flex flex-col">
@@ -188,20 +230,29 @@ const MeetingClient = () => {
                     </div>
                 ))}
             </div>
-            {viewedParticipant && <div className="screenviewer">
-                <button className="fixed top-0 right-0 z-10 opacity-25" onClick={() => {
-                    setViewedParticipant(null)
-                    if (closeRef.current.closeVid) {
-                        closeRef.current.closeVid()
-                    }
-                    if (closeRef.current.closeAudio) {
-                        closeRef.current.closeAudio()
-                    }
-                }}>
-                    <XCircleIcon width={32} height={32} />
-                </button>
+            {viewedParticipant && <div className="screenviewer" ref={viewerRef}>
+                {!hideControls &&
+                    <button className="fixed top-0 right-0 z-10 opacity-25" onClick={() => {
+                        setViewedParticipant(null)
+                        if (closeRef.current.closeVid) {
+                            closeRef.current.closeVid()
+                        }
+                        if (closeRef.current.closeAudio) {
+                            closeRef.current.closeAudio()
+                        }
+                    }}>
+                        <XCircleIcon width={32} height={32} />
+                    </button>}
                 {viewedParticipant.screenStream && <StreamPlayer stream={viewedParticipant.screenStream} />}
                 {viewedParticipant.screenAudioStream && <StreamPlayer volume={streamVolume} stream={viewedParticipant.screenAudioStream} />}
+                {!hideControls &&
+                    <div className="fixed bottom-0 left-0 p-2 rounded-full bg-black/20 flex flex-row gap-2 align-middle w-full">
+                        <SpeakerWaveIcon className="my-auto" width={20} height={20} />
+                        <input type="range" min={0} max={1} step={0.1} value={streamVolume} onChange={(ev) => setStreamVolume(parseFloat(ev.target.value))} />
+                        <button className="ml-auto" onClick={() => setFullscreen(!fullscreen)}>
+                            {!fullscreen? <ArrowsPointingOutIcon width={20} height={20} />: <ArrowsPointingInIcon width={20} height={20}/>}
+                        </button>
+                    </div>}
             </div>}
             <div className="dock">
                 {hasVideo && <button className={cameraStream ? "btn-red" : ""} onClick={toggleCamera}>
