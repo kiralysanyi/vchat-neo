@@ -9,7 +9,9 @@ const roomHandler = (router: Router, socket: ExtendedSocket, meetings: Record<st
     // attach handlers
     producerHandler(router, socket, meetings[meetingId].producerTransports, (transportId) => {
         socket.on("disconnect", () => {
-            delete meetings[meetingId].producerTransports[transportId];
+            if (meetings[meetingId]) {
+                delete meetings[meetingId].producerTransports[transportId];
+            }
         })
     }, (transportId, payloadId) => {
         // new stream

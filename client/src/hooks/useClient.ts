@@ -206,7 +206,7 @@ const useClient = () => {
 
     // 4. Setup Send Transport
     useEffect(() => {
-        if (!device) return;
+        if (!device || !authenticated) return;
 
         createSendTransport(socket, device, (transport) => {
             console.log("Send transport created");
@@ -216,7 +216,7 @@ const useClient = () => {
 
             setSendStream(() => sendstream);
         });
-    }, [device]);
+    }, [device, authenticated]);
 
     // 5. Produce Local Streams (Camera/Mic)
 

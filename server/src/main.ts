@@ -2,12 +2,8 @@
 import express from "express";
 import http from "http"
 import { Server } from "socket.io";
-import { createWorker } from "mediasoup";
 import createRouter from "./mediasoup/createRouter";
-import { PORT, SERVERPASS } from "./config";
-import producerHandler from "./mediasoup/producerHandler";
-import { ExtendedProducer } from "./types/ExtendedProducer";
-import consumerHandler from "./mediasoup/consumerHandler";
+import { CLEANUP_INTERVAL, PORT, SERVERPASS } from "./config";
 import { ExtendedSocket } from "./types/ExtendedSocket";
 import cors from "cors";
 import { Meeting } from "./types/Meeting";
@@ -21,6 +17,22 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 const meetings: Record<string, Meeting> = {};
+
+const cleanMeeting = (mId: string) => {
+    if (!meetings[mId]) {
+        return;
+    }
+
+    if (Object.keys(meetings[mId].participants).length > 0) {
+        meetings[mId].timeout = setTimeout(() => {
+            cleanMeeting(mId)
+        }, (60 * 1000) * CLEANUP_INTERVAL)
+        return;
+    }
+
+    meetings[mId].router.close();
+    delete meetings[mId];
+}
 
 app.use(cors({ origin: "*" }))
 app.use(express.json())
@@ -46,6 +58,12 @@ createWorkers().then(async (workers) => {
                 }
             }
 
+            // room cleaning reset
+            clearInterval(meetings[mId].timeout)
+            meetings[mId].timeout = setTimeout(() => {
+                cleanMeeting(mId)
+            }, (60 * 1000) * CLEANUP_INTERVAL)
+
             const router = meetings[mId].router;
 
             roomHandler(router, socket, meetings, mId);
@@ -67,6 +85,17 @@ createWorkers().then(async (workers) => {
                 socket.meetid = meetingId;
 
                 socket.join(meetings[meetingId].id);
+
+                socket.emit("participants", meetings[meetingId].participants)
+
+                meetings[meetingId].participants[transportId] = {
+                    nickname: nickname,
+                    producerTransportId: transportId,
+                    audio: false,
+                    video: false,
+                    sAudio: false,
+                    sVideo: false
+                }
 
                 socket.to(meetings[meetingId].id).emit("newJoined", {
                     nickname: nickname,
@@ -113,28 +142,25 @@ createWorkers().then(async (workers) => {
 
                 socket.on("consumeReady", onConsumeReady)
                 const onLeave = () => {
+                    // room cleaning reset
+                    clearInterval(meetings[mId].timeout)
+                    meetings[mId].timeout = setTimeout(() => {
+                        cleanMeeting(mId)
+                    }, (60 * 1000) * CLEANUP_INTERVAL)
+
                     socket.off("addstream", onAddStream)
                     socket.off("consumeReady", onConsumeReady)
                     socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
+                    socket.leave(meetingId)
                     delete meetings[meetingId].participants[transportId];
                     socket.off("disconnect", onLeave)
                     socket.off("leave", onLeave)
                 }
 
-                socket.emit("participants", meetings[meetingId].participants)
-
-                meetings[meetingId].participants[transportId] = {
-                    nickname: nickname,
-                    producerTransportId: transportId,
-                    audio: false,
-                    video: false,
-                    sAudio: false,
-                    sVideo: false
-                }
-
                 socket.on("disconnect", onLeave)
                 socket.on("leave", onLeave)
 
+                console.log("Send initialized signal")
                 socket.emit("initialized")
             })
 
@@ -199,7 +225,10 @@ createWorkers().then(async (workers) => {
             participants: {},
             producerTransports: {},
             router: await createRouter(workers[lastSelectedWorker]),
-            password: password
+            password: password,
+            timeout: setTimeout(() => {
+                cleanMeeting(id)
+            }, (60 * 1000) * CLEANUP_INTERVAL)
         }
 
         return res.status(201).json({

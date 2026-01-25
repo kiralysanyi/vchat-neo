@@ -8,7 +8,8 @@ interface Meeting {
     description?: string,
     router: Router,
     producerTransports: Record<string, ExtendedProducer>,
-    password?: string
+    password?: string,
+    timeout: any
 }
 
 export type { Meeting }

@@ -37,6 +37,7 @@ services:
       - PORT=8080
       - WORKERS=2 # count of worker threads, should not be bigger then cpu core/thread count
       - SERVERPASS=valami # if you set this then this password will be asked before creating a new meeting
+      - CLEANUP_INTERVAL=30 # basically the time of keeping rooms alive without participants (minutes, default: 60)
 ```
 
 ## Notes
