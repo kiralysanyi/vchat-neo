@@ -72,8 +72,10 @@ const MeetingClient = () => {
     };
 
     // produce screen stream
+    const [streaming, setStreaming] = useState(false)
     useEffect(() => {
-        if (screenStream && sendStream) {
+        if (screenStream && sendStream && !streaming) {
+            setStreaming(true)
             const vid = screenStream.getVideoTracks()[0]
             const audio = screenStream.getAudioTracks()[0]
             console.log(vid, audio)
@@ -95,8 +97,6 @@ const MeetingClient = () => {
                     })
                 }
             })
-
-
         }
     }, [screenStream, sendStream, streamOptions]);
 
@@ -108,6 +108,7 @@ const MeetingClient = () => {
                 track.onended ? track.onended(new Event("ended")) : null
             })
             setScreenStream(null);
+            setStreaming(false);
         } else {
             setShowScreenOptions(true)
         }
@@ -250,7 +251,7 @@ const MeetingClient = () => {
                         <SpeakerWaveIcon className="my-auto" width={20} height={20} />
                         <input type="range" min={0} max={1} step={0.1} value={streamVolume} onChange={(ev) => setStreamVolume(parseFloat(ev.target.value))} />
                         <button className="ml-auto" onClick={() => setFullscreen(!fullscreen)}>
-                            {!fullscreen? <ArrowsPointingOutIcon width={20} height={20} />: <ArrowsPointingInIcon width={20} height={20}/>}
+                            {!fullscreen ? <ArrowsPointingOutIcon width={20} height={20} /> : <ArrowsPointingInIcon width={20} height={20} />}
                         </button>
                     </div>}
             </div>}
