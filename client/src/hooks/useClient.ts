@@ -3,8 +3,8 @@ import type { ProducerCodecOptions, RtpCapabilities, RtpCodecCapability, Transpo
 import config from "../config";
 import { useContext, useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
-import { checkCamera } from "../capture/getCamera";
-import { checkMicrophone } from "../capture/getMicrophone";
+import { checkCamera, getCamera } from "../capture/getCamera";
+import { checkMicrophone, getMicrophone } from "../capture/getMicrophone";
 import { createRecvTransport, createSendTransport } from "../mediasoup/utils";
 import { DataContext } from "../providers/DataProvider";
 import socket from "../socket";
@@ -332,6 +332,29 @@ const useClient = () => {
             })
         }
     }, [])
+
+    // restart streams on rejoin
+    useEffect(() => {
+        if (!connected) {
+            return
+        }
+
+        if (camRef.current != null) {
+            getCamera().then((stream) => {
+                setCameraStream?.(stream)
+            })
+        }
+
+        if (micRef.current != null) {
+            getMicrophone().then((stream) => {
+                setMicrophoneStream?.(stream)
+            })
+        }
+
+        if (screenRef.current != null) {
+            setScreenStream?.(null)
+        }
+    }, [connected])
 
     // initiate start sequence
     useEffect(() => {
