@@ -220,6 +220,12 @@ createWorkers().then(async (workers) => {
             })
         }
 
+        if (id.length < 5) {
+            return res.status(400).json({
+                error: "Id has to be at least 5 characters"
+            })
+        }
+
         if (SERVERPASS != undefined) {
             if (SERVERPASS != srvPass) {
                 return res.status(401).json({
