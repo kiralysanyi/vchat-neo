@@ -304,21 +304,29 @@ const useClient = () => {
         }
     }, [sendTransport, recvTransport])
 
+    const camRef = useRef<MediaStream | null>(null)
+    const micRef = useRef<MediaStream | null>(null)
+    const screenRef = useRef<MediaStream | null>(null)
+
+    useEffect(() => { camRef.current = cameraStream }, [cameraStream])
+    useEffect(() => { micRef.current = microphoneStream }, [microphoneStream])
+    useEffect(() => { screenRef.current = screenStream }, [screenStream])
+
     // close all transports on leave
     useEffect(() => {
         return () => {
             console.log("Closing streams")
-            screenStream?.getTracks().forEach((track) => {
+            screenRef.current?.getTracks().forEach((track) => {
                 track.onended && track.onended(new Event("ended"))
                 track.stop()
             })
 
-            cameraStream?.getTracks().forEach((track) => {
+            camRef.current?.getTracks().forEach((track) => {
                 track.onended && track.onended(new Event("ended"))
                 track.stop()
             })
 
-            microphoneStream?.getTracks().forEach((track) => {
+            micRef.current?.getTracks().forEach((track) => {
                 track.onended && track.onended(new Event("ended"))
                 track.stop()
             })
