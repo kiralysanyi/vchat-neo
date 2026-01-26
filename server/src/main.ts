@@ -42,7 +42,18 @@ createWorkers().then(async (workers) => {
         //meeting related stuff
 
         socket.on("prepare", (mId: string, password?: string) => {
+            if (socket.joinState) {
+                if (socket.joinState != "idle") {
+                    console.error("Prepare declined because socket is already in state: ", socket.joinState)
+                    return
+                }
+            }
+
+            socket.joinState = "preparing"
+
+
             if (!meetings[mId]) {
+                socket.joinState = "idle"
                 return;
             }
 
@@ -59,11 +70,13 @@ createWorkers().then(async (workers) => {
             if (meetings[mId].password) {
                 if (!password) {
                     socket.emit("auth_required")
+                    socket.joinState = "idle"
                     return;
                 }
 
                 if (meetings[mId].password != password) {
                     socket.emit("wrong_pass")
+                    socket.joinState = "idle"
                     return;
                 }
             }
@@ -164,6 +177,7 @@ createWorkers().then(async (workers) => {
 
                 socket.on("consumeReady", onConsumeReady)
                 const onLeave = () => {
+                    socket.joinState = "idle";
                     console.log("Socket left", socket.id, new Date().toISOString())
                     console.log("==========================")
                     // room cleaning reset
@@ -195,6 +209,7 @@ createWorkers().then(async (workers) => {
                 socket.on("leave", onLeave)
 
                 console.log("Send initialized signal")
+                socket.joinState = "joined"
                 socket.emit("initialized")
             })
 
