@@ -14,10 +14,13 @@ const closeAllTransport = () => {
 const createSendTransport = (socket: Socket, device: Device, onCreateTransport: (transport: Transport) => void): Promise<(stream: MediaStream, payloadId: number, codec?: RtpCodecCapability, codecOptions?: ProducerCodecOptions) => Promise<void>> => {
     return new Promise((resolve) => {
         let sending = false;
+        console.log("Creating send transport")
         socket.emit("createProducerTransport", {}, async (params: TransportOptions<AppData>) => {
             const transport = device.createSendTransport(params);
+            console.log("Created send transport")
             transports[transport.id] = transport;
             transport.on("connect", ({ dtlsParameters }, cb) => {
+                console.log("Connecting send transport")
                 socket.emit("connectProducerTransport", { dtlsParameters }, cb);
             });
 
@@ -81,19 +84,28 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
 
                         console.log("Producing with options: ", options)
 
-                        const producer = await transport.produce(options)
-
-                        // if track ended, close the producer
-                        track.onended = () => {
-                            console.log("Stream ended, closing producer");
-                            producer.close();
-                            socket.emit("pclose", transport.id, payloadId);
+                        if (track.readyState == "ended") {
+                            console.log("Track ended, aborting produce")
+                            sending = false
+                            throw new Error("Track ended, aborting produce")
                         }
 
-                        sending = false;
+                        transport.produce(options).then((producer) => {
+                            console.log("Produce finished")
+                            // if track ended, close the producer
+                            track.onended = () => {
+                                console.log("Stream ended, closing producer");
+                                producer.close();
+                                socket.emit("pclose", transport.id, payloadId);
+                            }
 
-                        // stream sent, task resolved
-                        done();
+                            sending = false;
+
+                            // stream sent, task resolved
+                            done();
+                        }).catch((error) => {
+                            console.error("Produce error", error)
+                        })
                     }
 
                     send();

@@ -1,5 +1,5 @@
 import { Device } from "mediasoup-client";
-import type { ConnectionState, ProducerCodecOptions, RtpCapabilities, RtpCodecCapability, Transport } from "mediasoup-client/types";
+import type { ProducerCodecOptions, RtpCapabilities, RtpCodecCapability, Transport } from "mediasoup-client/types";
 import config from "../config";
 import { useContext, useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -32,8 +32,8 @@ const useClient = () => {
     const [connected, setConnected] = useState(socket.connected);
     const getStreamRef = useRef<(transportId: string, payloadId: number, onClose: Function) => Promise<{ stream: MediaStream, close: Function }>>(undefined)
 
-    const recTransportRef = useRef<Transport>(undefined);
-    const sendTransportRef = useRef<Transport>(undefined);
+    const [sendTransport, setSendTransport] = useState<Transport>()
+    const [recvTransport, setRecvTransport] = useState<Transport>()
 
     const [hasAudio, setHasAudio] = useState(false);
     const [hasVideo, setHasVideo] = useState(false);
@@ -145,7 +145,7 @@ const useClient = () => {
         let getStreamFunc: any;
 
         createRecvTransport(socket, device, (transport) => {
-            recTransportRef.current = transport;
+            setRecvTransport(transport)
         }).then((getstream) => {
             console.log("Ready to consume")
             getStreamFunc = getstream;
@@ -202,13 +202,11 @@ const useClient = () => {
     // 4. Setup Send Transport
     useEffect(() => {
         if (!device || !authenticated) return;
-
         createSendTransport(socket, device, (transport) => {
             console.log("Send transport created");
             setTransportId(transport.id);
-            sendTransportRef.current = transport;
+            setSendTransport(transport)
         }).then((sendstream) => {
-
             setSendStream(() => sendstream);
         });
     }, [device, authenticated]);
@@ -216,17 +214,17 @@ const useClient = () => {
     // 5. Produce Local Streams (Camera/Mic)
 
     useEffect(() => {
-        if (cameraStream && sendStream && sendTransportRef.current) {
+        if (cameraStream && sendStream && sendTransport) {
             const { codec, codecOptions } = getCodecOption("VP8")
             sendStream(cameraStream, 1, codec, codecOptions).then(() => {
                 console.log("Sending camera stream")
                 socket.emit("addstream", 1)
             })
         }
-    }, [cameraStream, sendStream, sendTransportRef.current]);
+    }, [cameraStream, sendStream, sendTransport]);
 
     useEffect(() => {
-        if (microphoneStream && sendStream && sendTransportRef.current) {
+        if (microphoneStream && sendStream && sendTransport) {
             sendStream(microphoneStream, 2, {
                 kind: 'audio',
                 mimeType: 'audio/opus',
@@ -243,7 +241,7 @@ const useClient = () => {
                 socket.emit("addstream", 2)
             })
         }
-    }, [microphoneStream, sendStream, sendTransportRef.current]);
+    }, [microphoneStream, sendStream, sendTransport]);
 
 
 
@@ -279,6 +277,10 @@ const useClient = () => {
     // handle disconnect
     useEffect(() => {
         const onDisconnect = () => {
+            sendTransport?.close()
+            recvTransport?.close()
+            setSendTransport(undefined);
+            setRecvTransport(undefined);
             setDevice(null);
             setTransportId(undefined);
             setSendStream(null);
@@ -297,9 +299,10 @@ const useClient = () => {
         socket.on("disconnect", onDisconnect)
 
         return () => {
+            socket.off("connect", onConnect)
             socket.off("disconnect", onDisconnect)
         }
-    }, [])
+    }, [sendTransport, recvTransport])
 
     // close all transports on leave
     useEffect(() => {
@@ -319,38 +322,18 @@ const useClient = () => {
                 track.onended && track.onended(new Event("ended"))
                 track.stop()
             })
-
-
-            sendTransportRef.current && sendTransportRef.current.close();
-            recTransportRef.current && recTransportRef.current.close();
         }
     }, [])
 
     // initiate start sequence
     useEffect(() => {
-        if (!connected) {
+        if (!connected || !joined) {
             return;
         }
 
         socket.emit("prepare", params.id)
-    }, [connected])
+    }, [connected, joined])
 
-    // log transport states
-    useEffect(() => {
-        const onStateChange = (state: ConnectionState) => {
-            console.log("Transport state: ", state)
-        }
-
-        sendTransportRef.current?.on("connectionstatechange", onStateChange);
-        recTransportRef.current?.on("connectionstatechange", onStateChange);
-
-        return () => {
-            sendTransportRef.current?.off("connectionstatechange", onStateChange);
-            recTransportRef.current?.off("connectionstatechange", onStateChange);
-        }
-
-
-    }, [sendTransportRef, recTransportRef])
 
     return {
         cameraStream,

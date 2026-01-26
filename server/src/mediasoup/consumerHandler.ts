@@ -5,12 +5,14 @@ import { ExtendedProducer } from "../types/ExtendedProducer"
 import { ExtendedSocket } from "../types/ExtendedSocket"
 
 const consumerHandler = (
-    router: Router, 
-    socket: ExtendedSocket, 
-    producers: Record<string, ExtendedProducer>, 
+    router: Router,
+    socket: ExtendedSocket,
+    producers: Record<string, ExtendedProducer>,
     onConsumeRequest: (producerId: string, accept: Function, deny: Function) => void
 ): void => {
-    
+    console.log("Attach consumer handler to ", socket.id)
+
+
     let transport: Transport | null = null;
 
     const onCreateConsumerTransport = async (_: any, cb: any) => {
@@ -25,7 +27,7 @@ const consumerHandler = (
 
     const onConnectConsumerTransport = async ({ dtlsParameters }: { dtlsParameters: DtlsParameters }, cb: any) => {
         if (!transport) return cb({ error: "Transport not found" });
-        
+
         await transport.connect({ dtlsParameters });
         cb(); // Acknowledge connection
     };

@@ -83,6 +83,10 @@ const createRouter = async (worker: Worker) => {
 
     const router = await worker.createRouter({ mediaCodecs });
 
+    router.on("listenererror", (err) => {
+        console.error("Router error: ", err)
+    })
+
     return router;
 }
 

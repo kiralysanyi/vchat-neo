@@ -101,9 +101,6 @@ createWorkers().then(async (workers) => {
                     if (socket.detachProducer) {
                         socket.detachProducer();
                     }
-
-                    socket.off("getCapabilities", onGetCapabilities);
-
                     return;
                 }
 
@@ -167,6 +164,8 @@ createWorkers().then(async (workers) => {
 
                 socket.on("consumeReady", onConsumeReady)
                 const onLeave = () => {
+                    console.log("Socket left", socket.id, new Date().toISOString())
+                    console.log("==========================")
                     // room cleaning reset
                     clearTimeout(meetings[mId].timeout)
                     meetings[mId].timeout = setTimeout(() => {
@@ -215,6 +214,8 @@ createWorkers().then(async (workers) => {
                 console.log("Detaching producer handler from", socket.id)
                 socket.detachProducer();
             }
+
+            socket.removeAllListeners()
         })
 
         console.log("Connected socket")
