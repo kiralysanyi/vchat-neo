@@ -73,16 +73,12 @@ const useClient = () => {
             setPassError(undefined);
         }
 
-        const onDisconnect = () => {
-            setAuthenticated(false);
-            setInitialized(false);
-        }
+
 
         socket.on("auth_required", onAuthNeeded)
         socket.on("wrong_pass", onWrongPass)
 
         socket.on("serverReady", onReady)
-        socket.on("disconnect", onDisconnect)
 
         const onInitialized = () => {
             setInitialized(true);
@@ -94,7 +90,6 @@ const useClient = () => {
             socket.off("auth_required", onAuthNeeded)
             socket.off("wrong_pass", onWrongPass)
             socket.off("serverReady", onReady)
-            socket.off("disconnect", onDisconnect)
             socket.off("initialized", onInitialized)
         }
     }, [password])
@@ -284,8 +279,13 @@ const useClient = () => {
     // handle disconnect
     useEffect(() => {
         const onDisconnect = () => {
+            setDevice(null);
+            setTransportId(undefined);
+            setSendStream(null);
             setConnected(false);
             setParticipants({});
+            setAuthenticated(false);
+            setInitialized(false);
         }
 
         const onConnect = () => {
