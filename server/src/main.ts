@@ -92,6 +92,21 @@ createWorkers().then(async (workers) => {
                     return;
                 }
 
+                if (meetings[meetingId].participants[transportId] != undefined) {
+                    console.error("Transport conflict, aborting join")
+                    if (socket.detachConsumer) {
+                        socket.detachConsumer()
+                    }
+
+                    if (socket.detachProducer) {
+                        socket.detachProducer();
+                    }
+
+                    socket.off("getCapabilities", onGetCapabilities);
+
+                    return;
+                }
+
                 socket.meetid = meetingId;
 
                 socket.join(meetings[meetingId].id);
