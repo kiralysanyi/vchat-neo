@@ -169,8 +169,8 @@ h1 {
 }
 
 .header {
-  @apply fixed top-0 left-0 w-full p-2 bg-gray-800/50 z-30;
-  @apply flex flex-row align-middle gap-4;
+  @apply fixed top-0 left-0 w-full p-2 bg-gray-800/50 z-10;
+  @apply flex flex-row align-middle gap-4 backdrop-blur-md;
   height: 4rem;
 }
 
