@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { getCamera } from "../capture/getCamera";
 import { getMicrophone } from "../capture/getMicrophone";
 import type { Participant } from "../types/Participant";
 import StreamPlayer from "../components/StreamPlayer";
 import { getScreen, checkScreenSupport } from "../capture/getScreen";
-import { ArrowsPointingInIcon, ArrowsPointingOutIcon, CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon, SpeakerWaveIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { ArrowsPointingInIcon, ArrowsPointingOutIcon, CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon, SpeakerWaveIcon, UserCircleIcon, UserGroupIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import useClient from "../hooks/useClient";
 import socket from "../socket";
 import useStreamConfig from "../hooks/useStreamConfig";
@@ -35,6 +35,7 @@ const MeetingClient = () => {
     const streamOptions = useStreamConfig();
 
     const navigate = useNavigate();
+    const params = useParams();
 
     const [showScreenOptions, setShowScreenOptions] = useState(false);
 
@@ -209,8 +210,29 @@ const MeetingClient = () => {
         }
     }, [fullscreen])
 
+    const [linkCopied, setLinkCopied] = useState(false)
+
+    const copyLink = () => {
+        navigator.clipboard.writeText(location.protocol + "//" + location.host + "/meeting/join/" + params.id)
+
+        setLinkCopied(true);
+
+        setTimeout(() => {
+            setLinkCopied(false)
+        }, 2000);
+    }
+
     return (
         <div className="page flex flex-col">
+            <div className="header">
+                <span>
+                    <UserGroupIcon width={24} height={24}/> {params.id}
+                </span>
+                <span>
+                    <UserCircleIcon width={24} height={24} /> {Object.keys(participants).length + 1}
+                </span>
+                <button className={`ml-auto ${linkCopied && "btn-green"}`} onClick={copyLink}>Copy link</button>
+            </div>
             <div className="streams-container">
                 <div className="participant">
                     {cameraStream && <StreamPlayer stream={cameraStream} />}
