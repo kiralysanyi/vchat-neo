@@ -100,8 +100,10 @@ const Join = () => {
                 } else {
                     console.error("Failed to create room", data)
                     if (res.status == 401) {
-                        setError("Wrong server password")
+                        return setError("Wrong server password")
                     }
+
+                    setError(data.error)
                 }
             })
         } else {

@@ -214,9 +214,15 @@ createWorkers().then(async (workers) => {
         const password = req.body.password ? req.body.password : undefined;
         const srvPass = req.body.srvPass ? req.body.srvPass : undefined;
 
-        if (id == "join" || id.includes(' ')) {
+        if (id == "join" || /[^\w-]/.test(id)) {
             return res.status(400).json({
                 error: "Invalid id"
+            })
+        }
+
+        if (id.length < 5) {
+            return res.status(400).json({
+                error: "Id has to be at least 5 characters"
             })
         }
 
