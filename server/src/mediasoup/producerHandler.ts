@@ -13,25 +13,33 @@ const producerHandler = (
     onProduce?: (transportId: string, payloadId: number) => void,
     onProducerClose?: (transportId: string, payloadId: number) => void
 ): void => {
+    console.log("Attach producer handler to ", socket.id)
 
     let transport: Transport | null = null;
 
     // 1. Create Transport logic
     const onCreateProducerTransport = async (_: any, cb: any) => {
         try {
-            console.log("Creating new producer transport")
+            console.log("================================")
+            console.log("Creating new producer transport for ", socket.id)
             if (router.closed) {
                 console.error("Router closed for some reason")
-                cb({error: "Router closed"})
+                cb({ error: "Router closed" })
             }
             const { transport: newTransport, params } = await createTransport(router, LISTEN_IPS);
             transport = newTransport;
+
+            console.log("Transport created: ", transport.id)
 
             transport.on("@close", () => {
                 console.log("Transport closed: ", transport?.id)
                 if (transport) {
                     delete producers[transport.id]
                 }
+            })
+
+            transport.on("listenererror", (err) => {
+                console.error("Transport error: ", err)
             })
 
             producers[transport.id] = {
@@ -49,12 +57,17 @@ const producerHandler = (
 
     // 2. Connection handshake logic
     const onConnectProducerTransport = async ({ dtlsParameters }: { dtlsParameters: DtlsParameters }, cb: any) => {
-        if (!transport) return cb({ error: "Transport not initialized" });
+        if (!transport) {
+            console.error("Transport not initialized")
+            return cb({ error: "Transport not initialized" });
+        }
 
         try {
             await transport.connect({ dtlsParameters });
+            console.log("Transport connected")
             cb();
         } catch (error) {
+            console.error("Connection failed: ", error)
             cb({ error: "Connection failed" });
         }
     };

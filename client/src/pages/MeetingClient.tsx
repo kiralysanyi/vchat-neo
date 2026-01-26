@@ -206,7 +206,9 @@ const MeetingClient = () => {
                 document.exitFullscreen();
             }
         } else {
-            document.exitFullscreen();
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
         }
     }, [fullscreen])
 
@@ -226,7 +228,7 @@ const MeetingClient = () => {
         <div className="page flex flex-col">
             <div className="header">
                 <span>
-                    <UserGroupIcon width={24} height={24}/> {params.id}
+                    <UserGroupIcon width={24} height={24} /> {params.id}
                 </span>
                 <span>
                     <UserCircleIcon width={24} height={24} /> {Object.keys(participants).length + 1}
