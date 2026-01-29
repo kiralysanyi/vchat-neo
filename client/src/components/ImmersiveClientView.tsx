@@ -37,6 +37,14 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
         }
     }, [participants])
 
+    // Close stream viewer connection on layout switch
+    useEffect(() => {
+        closeStream();
+        return () => {
+            closeStream();
+        }
+    }, [])
+
     const viewParticipant = (id: string) => {
         closeStream();
         setSelectedP(id);
