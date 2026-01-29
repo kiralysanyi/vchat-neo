@@ -123,7 +123,7 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
     return <>
         {/* Streams / participants */}
         <div className="immersive-view" ref={elementRef}>
-            <div className="participant-view" style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "80%" }}>
+            <div className="participant-view" style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "70%" }}>
                 {!viewedStream && (selectedP && participants[selectedP]) && ((participants[selectedP].cameraStream) && <StreamPlayer stream={participants[selectedP].cameraStream} />)}
                 {viewedStream && <StreamPlayer stream={viewedStream} />}
                 {(sAudioStream && showControls) && <div className="audio-control">
