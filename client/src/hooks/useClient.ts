@@ -304,9 +304,9 @@ const useClient = () => {
         }
     }, [sendTransport, recvTransport])
 
-    const camRef = useRef<MediaStream | null>(null)
-    const micRef = useRef<MediaStream | null>(null)
-    const screenRef = useRef<MediaStream | null>(null)
+    const camRef = useRef<MediaStream | null>(cameraStream)
+    const micRef = useRef<MediaStream | null>(microphoneStream)
+    const screenRef = useRef<MediaStream | null>(screenStream)
 
     useEffect(() => { camRef.current = cameraStream }, [cameraStream])
     useEffect(() => { micRef.current = microphoneStream }, [microphoneStream])
@@ -322,8 +322,6 @@ const useClient = () => {
     }, [sendTransport, recvTransport])
 
     useEffect(() => {
-        // When the component unmounts, React runs the 
-        // cleanup function from the LAST successful render.
         return () => {
             console.log("Closing streams and transports");
             [screenRef, camRef, micRef].forEach((ref) => {
@@ -333,7 +331,6 @@ const useClient = () => {
                 });
             });
 
-            // These will now be the CURRENT values from state/props
             bRef.current.recvTransport?.close();
             bRef.current.sendTransport?.close();
         };
@@ -345,13 +342,13 @@ const useClient = () => {
             return
         }
 
-        if (camRef.current != null) {
+        if (camRef.current != null && camRef.current.active == false) {
             getCamera().then((stream) => {
                 setCameraStream?.(stream)
             })
         }
 
-        if (micRef.current != null) {
+        if (micRef.current != null && micRef.current.active == false) {
             getMicrophone().then((stream) => {
                 setMicrophoneStream?.(stream)
             })
