@@ -313,25 +313,31 @@ const useClient = () => {
     useEffect(() => { screenRef.current = screenStream }, [screenStream])
 
     // close all transports on leave
+
+    // bridge states to ref
+    const bRef = useRef({ sendTransport, recvTransport });
+
     useEffect(() => {
+        bRef.current = { sendTransport, recvTransport };
+    }, [sendTransport, recvTransport])
+
+    useEffect(() => {
+        // When the component unmounts, React runs the 
+        // cleanup function from the LAST successful render.
         return () => {
-            console.log("Closing streams")
-            screenRef.current?.getTracks().forEach((track) => {
-                track.onended && track.onended(new Event("ended"))
-                track.stop()
-            })
+            console.log("Closing streams and transports");
+            [screenRef, camRef, micRef].forEach((ref) => {
+                ref.current?.getTracks().forEach((track) => {
+                    track.onended?.(new Event("ended"));
+                    track.stop();
+                });
+            });
 
-            camRef.current?.getTracks().forEach((track) => {
-                track.onended && track.onended(new Event("ended"))
-                track.stop()
-            })
-
-            micRef.current?.getTracks().forEach((track) => {
-                track.onended && track.onended(new Event("ended"))
-                track.stop()
-            })
-        }
-    }, [])
+            // These will now be the CURRENT values from state/props
+            bRef.current.recvTransport?.close();
+            bRef.current.sendTransport?.close();
+        };
+    }, []);
 
     // restart streams on rejoin
     useEffect(() => {
