@@ -1,7 +1,7 @@
-import { ComputerDesktopIcon } from "@heroicons/react/24/outline";
+import { ArrowsPointingInIcon, ArrowsPointingOutIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline";
 import StreamPlayer from "./StreamPlayer";
 import type { Participant } from "../types/Participant";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface PropsType {
     cameraStream: MediaStream | null,
@@ -22,6 +22,26 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
     const [viewedStream, setViewedStream] = useState<MediaStream>();
     const [sAudioStream, setSAudioStream] = useState<MediaStream>();
     const [volume, setVolume] = useState(1);
+    const [showControls, setShowControls] = useState(true);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const elementRef = useRef<HTMLDivElement>(null)
+
+    // show/hide audio controls on mouse move
+    useEffect(() => {
+        let timeout: number;
+        const onMove = () => {
+            timeout != undefined && clearTimeout(timeout);
+            setShowControls(true);
+            timeout = setTimeout(() => {
+                setShowControls(false);
+            }, 2000);
+        };
+        window.addEventListener("mousemove", onMove);
+
+        return () => {
+            window.removeEventListener("mousemove", onMove);
+        }
+    }, [])
 
     const closeStream = () => {
         if (closeRef.current.closeVid) {
@@ -45,6 +65,27 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
         return () => {
             closeStream();
         }
+    }, [])
+
+    //handle fullscreen
+    const goFullscreen = () => {
+        elementRef.current?.requestFullscreen();
+        setIsFullscreen(true)
+    }
+
+    const leaveFullscreen = () => {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        }
+        setIsFullscreen(false);
+    }
+
+    const toggleFullscreen = () => {
+        isFullscreen ? leaveFullscreen() : goFullscreen();
+    }
+
+    useEffect(() => {
+        return () => leaveFullscreen();
     }, [])
 
     const viewParticipant = (id: string) => {
@@ -81,16 +122,19 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
 
     return <>
         {/* Streams / participants */}
-        <div className="immersive-view">
-            <div className="participant-view">
+        <div className="immersive-view" ref={elementRef}>
+            <div className="participant-view" style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "80%" }}>
                 {!viewedStream && (selectedP && participants[selectedP]) && ((participants[selectedP].cameraStream) && <StreamPlayer stream={participants[selectedP].cameraStream} />)}
                 {viewedStream && <StreamPlayer stream={viewedStream} />}
-                {sAudioStream && <div className="audio-control">
+                {(sAudioStream && showControls) && <div className="audio-control">
                     <input type="range" onChange={(ev) => setVolume(parseFloat(ev.target.value))} value={volume} max={1} min={0} step={0.1} />
                 </div>}
+                {(viewedStream && showControls) && <button className="fscreen-btn" onClick={toggleFullscreen}>
+                    {!isFullscreen ? <ArrowsPointingOutIcon width={20} height={20} /> : <ArrowsPointingInIcon width={20} height={20} />}
+                </button>}
                 {sAudioStream && <StreamPlayer stream={sAudioStream} volume={volume} />}
             </div>
-            <div className="participants-bar">
+            <div className={`${(viewedStream != undefined && !showControls && isFullscreen) ? "opacity-0" : "opacity-100"} participants-bar`}>
                 <div className="participant-preview">
                     {cameraStream && <StreamPlayer stream={cameraStream} />}
                     <span className="name">{nickname} (You)</span>
