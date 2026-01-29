@@ -14,7 +14,6 @@ const DefaultClientView = ({ cameraStream, nickname, participants, viewStream }:
             {Object.values(participants).map(p => (
                 <div key={p.producerTransportId} className="participant">
                     {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
-                    {p.microphoneStream && <StreamPlayer stream={p.microphoneStream} />}
                     {p.streaming && <span onClick={() => {
                         viewStream(p)
                     }} className="view">

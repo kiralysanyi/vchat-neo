@@ -12,6 +12,7 @@ import useStreamConfig from "../hooks/useStreamConfig";
 import getCodecOption from "../utils/getCodecOption";
 import useWakeLock from "../hooks/useWakeLock";
 import DefaultClientView from "../components/DefaultClientView";
+import ImmersiveClientView from "../components/ImmersiveClientView";
 
 const MeetingClient = () => {
     const [streamVolume, setStreamVolume] = useState(1);
@@ -225,6 +226,20 @@ const MeetingClient = () => {
         }, 2000);
     }
 
+    const [immersiveViewEnabled, setImmersiveViewEnabled] = useState(false);
+
+    useEffect(() => {
+        setImmersiveViewEnabled(window.innerWidth > 1000)
+        const onResize = () => {
+            setImmersiveViewEnabled(window.innerWidth > 1000)
+        }
+        window.addEventListener("resize", onResize);
+
+        return () => {
+            window.removeEventListener("resize", onResize);
+        }
+    });
+
     return (
         <div className="page flex flex-col">
             {/* Header */}
@@ -237,7 +252,13 @@ const MeetingClient = () => {
                 </span>
                 <button className={`ml-auto ${linkCopied && "btn-green"}`} onClick={copyLink}>Copy link</button>
             </div>
-            <DefaultClientView nickname={nickname} participants={participants} viewStream={viewStream} cameraStream={cameraStream} />
+            {/* Play audio */}
+            {Object.values(participants).map(p => (
+                p.microphoneStream && <StreamPlayer stream={p.microphoneStream} />
+            ))}
+
+            {/* Participants view */}
+            {immersiveViewEnabled && getStreamRef.current ? <ImmersiveClientView closeRef={closeRef} getStreamRef={getStreamRef} nickname={nickname} participants={participants} cameraStream={cameraStream} /> : <DefaultClientView nickname={nickname} participants={participants} viewStream={viewStream} cameraStream={cameraStream} />}
             {/* Screenshare view */}
             {viewedParticipant && <div className="screenviewer" ref={viewerRef}>
                 {!hideControls &&

@@ -187,6 +187,59 @@ h1 {
   @apply shadow-green-400 border-green-600;
 }
 
+.immersive-view {
+  @apply flex flex-row w-full flex-wrap transition-all fixed left-0;
+  top: 4.5rem;
+  height: calc(100% - 10rem);
+  overflow-y: auto;
+}
+
+.participants-bar {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  width: 100%;
+  height: 20%;
+  background-color: black;
+  overflow-x: auto;
+  @apply flex flex-row;
+}
+
+.participant-preview {
+  @apply w-full sm:w-1/2 lg:w-1/3 xl:w-1/4 bg-gray-900 h-full relative border-2 border-gray-800 transition-all;
+}
+
+.participant-preview .player {
+  @apply w-full h-full;
+}
+
+.participant-preview video {
+  @apply w-full h-full;
+}
+
+.participant-view {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+   width: 100%;
+   height: 80%;
+}
+
+.participant-view .player {
+  @apply w-full h-full;
+}
+
+.participant-view video {
+  @apply w-full h-full;
+}
+
+@media (min-width: 1000px) {
+  .dock {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-height: 700px) {
   .participant {
     @apply h-1/2 sm:w-1/2;
