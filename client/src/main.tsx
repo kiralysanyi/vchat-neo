@@ -21,7 +21,7 @@ const router = createBrowserRouter([
         element: <Join />
       },
       {
-        path: "/meeting/:id",
+        path: "/meeting/client/:id",
         element: <MeetingClient />
       }
     ]
