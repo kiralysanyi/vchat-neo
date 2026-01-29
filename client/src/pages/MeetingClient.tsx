@@ -11,6 +11,7 @@ import socket from "../socket";
 import useStreamConfig from "../hooks/useStreamConfig";
 import getCodecOption from "../utils/getCodecOption";
 import useWakeLock from "../hooks/useWakeLock";
+import DefaultClientView from "../components/DefaultClientView";
 
 const MeetingClient = () => {
     const [streamVolume, setStreamVolume] = useState(1);
@@ -226,6 +227,7 @@ const MeetingClient = () => {
 
     return (
         <div className="page flex flex-col">
+            {/* Header */}
             <div className="header">
                 <span>
                     <UserGroupIcon width={24} height={24} /> {params.id}
@@ -235,25 +237,8 @@ const MeetingClient = () => {
                 </span>
                 <button className={`ml-auto ${linkCopied && "btn-green"}`} onClick={copyLink}>Copy link</button>
             </div>
-            <div className="streams-container">
-                <div className="participant">
-                    {cameraStream && <StreamPlayer stream={cameraStream} />}
-                    <span className="name">{nickname} (You)</span>
-                </div>
-                {Object.values(participants).map(p => (
-                    <div key={p.producerTransportId} className="participant">
-                        {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
-                        {p.microphoneStream && <StreamPlayer stream={p.microphoneStream} />}
-                        {p.streaming && <span onClick={() => {
-                            viewStream(p)
-                        }} className="view">
-                            <ComputerDesktopIcon width={28} height={28} />
-                        </span>}
-                        <span className="name">{p.nickname}</span>
-                        <span className="options"></span>
-                    </div>
-                ))}
-            </div>
+            <DefaultClientView nickname={nickname} participants={participants} viewStream={viewStream} cameraStream={cameraStream} />
+            {/* Screenshare view */}
             {viewedParticipant && <div className="screenviewer" ref={viewerRef}>
                 {!hideControls &&
                     <button className="fixed top-0 right-0 z-10 opacity-25" onClick={() => {
@@ -278,6 +263,8 @@ const MeetingClient = () => {
                         </button>
                     </div>}
             </div>}
+
+            {/* Dock */}
             <div className="dock">
                 {hasVideo && <button className={cameraStream ? "btn-red" : ""} onClick={toggleCamera}>
                     <CameraIcon width={32} height={32} />
@@ -294,6 +281,8 @@ const MeetingClient = () => {
                     <PhoneArrowDownLeftIcon width={32} height={32} />
                 </button>
             </div>
+
+            {/* Screenshare setup */}
             {showScreenOptions && <div className="screenoptions">
                 <div className="options-container">
                     <h1>Set up screenshare</h1>
@@ -325,6 +314,8 @@ const MeetingClient = () => {
                     <button onClick={startStream}>Start</button>
                 </div>
             </div>}
+
+            {/* Password modal */}
             {passError && <div className="fixed top-0 left-0 w-full h-full z-40 bg-gray-900 flex flex-col justify-center align-middle p-3 gap-2">
                 <h1>{passError}</h1>
                 <div className="form-group mr-auto gap-2 w-96 max-w-full">
@@ -332,6 +323,8 @@ const MeetingClient = () => {
                     <button onClick={authenticate}>Join</button>
                 </div>
             </div>}
+
+            {/* Reconnect display */}
             {!connected && <div className="fixed top-0 left-0 w-full h-full z-50 bg-gray-900 flex flex-col justify-center align-middle p-3 gap-2">
                 <h1>Disconnected from server</h1>
                 <h2 className="text-2xl">Connecting</h2>
