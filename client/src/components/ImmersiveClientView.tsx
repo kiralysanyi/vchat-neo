@@ -19,7 +19,9 @@ interface PropsType {
 
 const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRef, closeRef }: PropsType) => {
     const [selectedP, setSelectedP] = useState<string>();
-    const [viewedStream, setViewedStream] = useState<MediaStream>()
+    const [viewedStream, setViewedStream] = useState<MediaStream>();
+    const [sAudioStream, setSAudioStream] = useState<MediaStream>();
+    const [volume, setVolume] = useState(1);
 
     const closeStream = () => {
         if (closeRef.current.closeVid) {
@@ -67,9 +69,11 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
             // get screen audio
 
             if (p.streamingAudio == true) {
-                getStreamRef.current(p.producerTransportId, 4, () => { }).then(({ stream, close }) => {
+                getStreamRef.current(p.producerTransportId, 4, () => {
+                    setSAudioStream(undefined)
+                }).then(({ stream, close }) => {
                     closeRef.current.closeAudio = close
-                    //TODO: implement audio handling
+                    setSAudioStream(stream);
                 })
             }
         }
@@ -81,6 +85,10 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
             <div className="participant-view">
                 {!viewedStream && (selectedP && participants[selectedP]) && ((participants[selectedP].cameraStream) && <StreamPlayer stream={participants[selectedP].cameraStream} />)}
                 {viewedStream && <StreamPlayer stream={viewedStream} />}
+                {sAudioStream && <div className="audio-control">
+                    <input type="range" onChange={(ev) => setVolume(parseFloat(ev.target.value))} value={volume} max={1} min={0} step={0.1} />
+                </div>}
+                {sAudioStream && <StreamPlayer stream={sAudioStream} volume={volume} />}
             </div>
             <div className="participants-bar">
                 <div className="participant-preview">
