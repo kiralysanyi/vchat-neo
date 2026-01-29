@@ -95,7 +95,7 @@ const Join = () => {
 
                     if (setJoined) {
                         setJoined(true)
-                        navigate("/meeting/" + params.id)
+                        navigate("/meeting/client/" + params.id)
                     }
                 } else {
                     console.error("Failed to create room", data)
@@ -113,7 +113,7 @@ const Join = () => {
 
             if (setJoined) {
                 setJoined(true)
-                navigate("/meeting/" + params.id)
+                navigate("/meeting/client/" + params.id)
             }
         }
     }
