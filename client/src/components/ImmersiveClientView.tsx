@@ -1,10 +1,16 @@
-import { ArrowsPointingInIcon, ArrowsPointingOutIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline";
+import { ArrowsPointingInIcon, ArrowsPointingOutIcon, CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon } from "@heroicons/react/24/outline";
 import StreamPlayer from "./StreamPlayer";
 import type { Participant } from "../types/Participant";
 import { useEffect, useRef, useState } from "react";
+import { checkScreenSupport } from "../capture/getScreen";
+import { useNavigate } from "react-router";
+import { checkCamera } from "../capture/getCamera";
+import { checkMicrophone } from "../capture/getMicrophone";
 
 interface PropsType {
     cameraStream: MediaStream | null,
+    microphoneStream: MediaStream | null,
+    screenStream: MediaStream | null,
     nickname: string | null,
     participants: Record<string, Participant>,
     getStreamRef: React.RefObject<((transportId: string, payloadId: number, onClose: Function) => Promise<{
@@ -14,34 +20,61 @@ interface PropsType {
     closeRef: React.RefObject<{
         closeVid: Function | undefined;
         closeAudio: Function | undefined;
-    }>
+    }>,
+    toggleCamera: () => void,
+    toggleMicrophone: () => void,
+    toggleScreen: () => void
 }
 
-const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRef, closeRef }: PropsType) => {
+const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nickname, participants, getStreamRef, closeRef, toggleCamera, toggleMicrophone, toggleScreen }: PropsType) => {
     const [selectedP, setSelectedP] = useState<string>();
     const [viewedStream, setViewedStream] = useState<MediaStream>();
     const [sAudioStream, setSAudioStream] = useState<MediaStream>();
     const [volume, setVolume] = useState(1);
     const [showControls, setShowControls] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const elementRef = useRef<HTMLDivElement>(null)
+    const elementRef = useRef<HTMLDivElement>(null);
+
+    const navigate = useNavigate();
+
+    // check devices
+
+    const [hasAudio, setHasAudio] = useState(false);
+    const [hasVideo, setHasVideo] = useState(false);
+
+    useEffect(() => {
+        checkCamera().then((has) => {
+            setHasVideo(has);
+        })
+
+        checkMicrophone().then((has) => {
+            setHasAudio(has);
+        })
+    }, [])
+
+    const [autoHide, setAutoHide] = useState(true);
 
     // show/hide audio controls on mouse move
     useEffect(() => {
         let timeout: number;
         const onMove = () => {
             timeout != undefined && clearTimeout(timeout);
-            setShowControls(true);
-            timeout = setTimeout(() => {
-                setShowControls(false);
-            }, 2000);
+            if (autoHide == false) {
+                setShowControls(true);
+            } else {
+                setShowControls(true);
+                timeout = setTimeout(() => {
+                    setShowControls(false);
+                }, 2000);
+            }
         };
         window.addEventListener("mousemove", onMove);
 
         return () => {
+            clearTimeout(timeout);
             window.removeEventListener("mousemove", onMove);
         }
-    }, [])
+    }, [autoHide])
 
     const closeStream = () => {
         if (closeRef.current.closeVid) {
@@ -123,7 +156,7 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
     return <>
         {/* Streams / participants */}
         <div className="immersive-view" ref={elementRef}>
-            <div className="participant-view" style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "70%" }}>
+            <div className="participant-view" onMouseEnter={() => setAutoHide(true)} style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "calc(70% - 5rem)" }}>
                 {!viewedStream && (selectedP && participants[selectedP]) && ((participants[selectedP].cameraStream) && <StreamPlayer stream={participants[selectedP].cameraStream} />)}
                 {viewedStream && <StreamPlayer stream={viewedStream} />}
                 {(sAudioStream && showControls) && <div className="audio-control">
@@ -134,13 +167,15 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
                 </button>}
                 {sAudioStream && <StreamPlayer stream={sAudioStream} volume={volume} />}
             </div>
-            <div className={`${(viewedStream != undefined && !showControls && isFullscreen) ? "opacity-0" : "opacity-100"} participants-bar`}>
+            <div className={`${(viewedStream != undefined && !showControls && isFullscreen) ? "opacity-0" : "opacity-100"} participants-bar`} onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}>
                 <div className="participant-preview">
                     {cameraStream && <StreamPlayer stream={cameraStream} />}
                     <span className="name">{nickname} (You)</span>
                 </div>
                 {Object.values(participants).map(p => (
-                    <div key={p.producerTransportId} className="participant-preview" onClick={() => { viewParticipant(p.producerTransportId) }}>
+                    <div key={p.producerTransportId} className="participant-preview"
+                        onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}
+                        onClick={() => { viewParticipant(p.producerTransportId) }}>
                         {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
                         {p.streaming && <span onClick={(e) => {
                             e.stopPropagation();
@@ -153,7 +188,27 @@ const ImmersiveClientView = ({ cameraStream, nickname, participants, getStreamRe
                     </div>
                 ))}
             </div>
-        </div></>
+            {/* Dock */}
+            <div className={`dock ${(isFullscreen && !showControls) && "dock-hidden"}`}
+                onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}
+            >
+                {hasVideo && <button className={cameraStream ? "btn-red" : ""} onClick={toggleCamera}>
+                    <CameraIcon width={32} height={32} />
+                </button>}
+                {hasAudio && <button className={microphoneStream ? "btn-red" : ""} onClick={toggleMicrophone}>
+                    <MicrophoneIcon width={32} height={32} />
+                </button>}
+                {checkScreenSupport() && <button className={screenStream ? "btn-red" : ""} onClick={toggleScreen}>
+                    <ComputerDesktopIcon width={32} height={32} />
+                </button>}
+                <button className="btn-red" onClick={() => {
+                    navigate("/")
+                }}>
+                    <PhoneArrowDownLeftIcon width={32} height={32} />
+                </button>
+            </div>
+        </div>
+    </>
 }
 
 export default ImmersiveClientView;
