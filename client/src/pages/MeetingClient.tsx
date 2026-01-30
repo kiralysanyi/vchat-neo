@@ -1,32 +1,26 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router";
 import { getCamera } from "../capture/getCamera";
 import { getMicrophone } from "../capture/getMicrophone";
-import type { Participant } from "../types/Participant";
 import StreamPlayer from "../components/StreamPlayer";
-import { getScreen, checkScreenSupport } from "../capture/getScreen";
-import { ArrowsPointingInIcon, ArrowsPointingOutIcon, CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon, SpeakerWaveIcon, UserCircleIcon, UserGroupIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import { getScreen } from "../capture/getScreen";
+import { UserCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import useClient from "../hooks/useClient";
 import socket from "../socket";
 import useStreamConfig from "../hooks/useStreamConfig";
 import getCodecOption from "../utils/getCodecOption";
 import useWakeLock from "../hooks/useWakeLock";
-import DefaultClientView from "../components/DefaultClientView";
 import ImmersiveClientView from "../components/ImmersiveClientView";
 
 const MeetingClient = () => {
-    const [streamVolume, setStreamVolume] = useState(1);
-
     const {
         cameraStream,
         microphoneStream,
         setMicrophoneStream,
         setCameraStream,
         nickname,
-        participants, setParticipants,
+        participants,
         connected,
-        hasAudio, hasVideo,
-        viewedParticipant, setViewedParticipant,
         closeRef,
         getStreamRef,
         sendStream,
@@ -36,7 +30,6 @@ const MeetingClient = () => {
 
     const streamOptions = useStreamConfig();
 
-    const navigate = useNavigate();
     const params = useParams();
 
     const [showScreenOptions, setShowScreenOptions] = useState(false);
@@ -131,88 +124,9 @@ const MeetingClient = () => {
         }
     }
 
-    const viewStream = (p: Participant) => {
-        setStreamVolume(1)
-        if (p.streaming == true && getStreamRef.current != undefined) {
-            // get screen video
-            getStreamRef.current(p.producerTransportId, 3, () => {
-                // onclose
-                setViewedParticipant(null)
-            }).then(({ stream, close }) => {
-                closeRef.current.closeVid = close
-                setParticipants(prev => {
-                    const updated = { ...prev };
-                    if (!updated[p.producerTransportId]) return prev; // Guard against unknown participant
-
-                    updated[p.producerTransportId].screenStream = stream
-
-                    return { ...updated };
-                });
-                setViewedParticipant(p)
-            })
-
-            // get screen audio
-
-            if (p.streamingAudio == true) {
-                getStreamRef.current(p.producerTransportId, 4, () => { }).then(({ stream, close }) => {
-                    closeRef.current.closeAudio = close
-                    setParticipants(prev => {
-                        const updated = { ...prev };
-                        if (!updated[p.producerTransportId]) return prev; // Guard against unknown participant
-
-                        updated[p.producerTransportId].screenAudioStream = stream
-
-                        return { ...updated };
-                    });
-                    setViewedParticipant(p)
-                })
-            }
-        }
-    }
-
-    //hide controls in stream viewer
-    const [hideControls, setHideControls] = useState(false)
-
-    useEffect(() => {
-        let timeout = setTimeout(() => {
-            setHideControls(true)
-        }, 3000);
-
-        const onMove = () => {
-            clearTimeout(timeout);
-            setHideControls(false);
-            timeout = setTimeout(() => {
-                setHideControls(true)
-            }, 3000);
-        }
-
-        window.addEventListener("mousemove", onMove);
-
-        return () => {
-            window.removeEventListener("mousemove", onMove)
-        }
-    }, [])
-
     //wakelock
     useWakeLock();
 
-    //fullscreen viewer
-    const viewerRef = useRef<HTMLDivElement>(null)
-    const [fullscreen, setFullscreen] = useState(false)
-
-    useEffect(() => {
-        if (viewerRef.current) {
-            if (fullscreen) {
-                viewerRef.current.requestFullscreen()
-            } else {
-                document.exitFullscreen();
-            }
-        } else {
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
-        }
-    }, [fullscreen])
 
     const [linkCopied, setLinkCopied] = useState(false)
 
@@ -226,19 +140,6 @@ const MeetingClient = () => {
         }, 2000);
     }
 
-    const [immersiveViewEnabled, setImmersiveViewEnabled] = useState(false);
-
-    useEffect(() => {
-        setImmersiveViewEnabled(window.innerWidth > 1000)
-        const onResize = () => {
-            setImmersiveViewEnabled(window.innerWidth > 1000)
-        }
-        window.addEventListener("resize", onResize);
-
-        return () => {
-            window.removeEventListener("resize", onResize);
-        }
-    });
 
     return (
         <div className="page flex flex-col">
@@ -258,50 +159,20 @@ const MeetingClient = () => {
             ))}
 
             {/* Participants view */}
-            {immersiveViewEnabled && getStreamRef.current ? <ImmersiveClientView closeRef={closeRef} getStreamRef={getStreamRef} nickname={nickname} participants={participants} cameraStream={cameraStream} /> : <DefaultClientView nickname={nickname} participants={participants} viewStream={viewStream} cameraStream={cameraStream} />}
-            {/* Screenshare view */}
-            {viewedParticipant && <div className="screenviewer" ref={viewerRef}>
-                {!hideControls &&
-                    <button className="fixed top-0 right-0 z-10 opacity-25" onClick={() => {
-                        setViewedParticipant(null)
-                        if (closeRef.current.closeVid) {
-                            closeRef.current.closeVid()
-                        }
-                        if (closeRef.current.closeAudio) {
-                            closeRef.current.closeAudio()
-                        }
-                    }}>
-                        <XCircleIcon width={32} height={32} />
-                    </button>}
-                {viewedParticipant.screenStream && <StreamPlayer stream={viewedParticipant.screenStream} />}
-                {viewedParticipant.screenAudioStream && <StreamPlayer volume={streamVolume} stream={viewedParticipant.screenAudioStream} />}
-                {!hideControls &&
-                    <div className="fixed bottom-0 left-0 p-2 rounded-full bg-black/20 flex flex-row gap-2 align-middle w-full">
-                        <SpeakerWaveIcon className="my-auto" width={20} height={20} />
-                        <input type="range" min={0} max={1} step={0.1} value={streamVolume} onChange={(ev) => setStreamVolume(parseFloat(ev.target.value))} />
-                        <button className="ml-auto" onClick={() => setFullscreen(!fullscreen)}>
-                            {!fullscreen ? <ArrowsPointingOutIcon width={20} height={20} /> : <ArrowsPointingInIcon width={20} height={20} />}
-                        </button>
-                    </div>}
-            </div>}
+            <ImmersiveClientView
+                closeRef={closeRef}
+                getStreamRef={getStreamRef}
+                nickname={nickname}
+                participants={participants}
+                cameraStream={cameraStream}
+                microphoneStream={microphoneStream}
+                screenStream={screenStream}
+                toggleCamera={toggleCamera}
+                toggleMicrophone={toggleMicrophone}
+                toggleScreen={toggleScreen}
+            />
 
-            {/* Dock */}
-            <div className="dock">
-                {hasVideo && <button className={cameraStream ? "btn-red" : ""} onClick={toggleCamera}>
-                    <CameraIcon width={32} height={32} />
-                </button>}
-                {hasAudio && <button className={microphoneStream ? "btn-red" : ""} onClick={toggleMicrophone}>
-                    <MicrophoneIcon width={32} height={32} />
-                </button>}
-                {checkScreenSupport() && <button className={screenStream ? "btn-red" : ""} onClick={toggleScreen}>
-                    <ComputerDesktopIcon width={32} height={32} />
-                </button>}
-                <button className="btn-red" onClick={() => {
-                    navigate("/")
-                }}>
-                    <PhoneArrowDownLeftIcon width={32} height={32} />
-                </button>
-            </div>
+
 
             {/* Screenshare setup */}
             {showScreenOptions && <div className="screenoptions">
