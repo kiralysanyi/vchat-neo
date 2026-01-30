@@ -331,7 +331,7 @@ createWorkers().then(async (workers) => {
     }
 
     app.use((req, res) => {
-        res.redirect("/")
+        res.sendFile("index.html", {root: "./public"})
     })
 
     server.listen(PORT, () => {
