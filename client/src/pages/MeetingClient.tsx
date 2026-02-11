@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { getCamera } from "../capture/getCamera";
 import { getMicrophone } from "../capture/getMicrophone";
-import StreamPlayer from "../components/StreamPlayer";
 import { getScreen } from "../capture/getScreen";
 import { UserCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import useClient from "../hooks/useClient";
@@ -20,6 +19,7 @@ const MeetingClient = () => {
         setCameraStream,
         nickname,
         participants,
+        setParticipants,
         connected,
         closeRef,
         getStreamRef,
@@ -153,10 +153,6 @@ const MeetingClient = () => {
                 </span>
                 <button className={`ml-auto ${linkCopied && "btn-green"}`} onClick={copyLink}>Copy link</button>
             </div>
-            {/* Play audio */}
-            {Object.values(participants).map(p => (
-                p.microphoneStream && <StreamPlayer key={p.producerTransportId} stream={p.microphoneStream} />
-            ))}
 
             {/* Participants view */}
             <ImmersiveClientView
@@ -170,6 +166,7 @@ const MeetingClient = () => {
                 toggleCamera={toggleCamera}
                 toggleMicrophone={toggleMicrophone}
                 toggleScreen={toggleScreen}
+                setParticipants={setParticipants}
             />
 
 

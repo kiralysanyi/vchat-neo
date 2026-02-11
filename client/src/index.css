@@ -32,6 +32,11 @@ select:focus {
   height: 100dvh;
 }
 
+.joinPreview {
+  width: 400px;
+  height: 300px;
+}
+
 h1 {
   font-size: 3rem;
 }
@@ -80,6 +85,10 @@ h1 {
 
 .view {
   @apply absolute top-2 left-2 p-2 border-2 border-gray-400 rounded-full backdrop-blur-2xl bg-black/20 cursor-pointer hover:bg-white/20;
+}
+
+.options {
+  @apply absolute bottom-2 right-2 p-2 border-2 border-gray-400 rounded-full backdrop-blur-2xl bg-black/20 cursor-pointer hover:bg-white/20;
 }
 
 .streams-container {
@@ -203,7 +212,7 @@ h1 {
   bottom: 5rem;
   left: 0px;
   width: 100%;
-  height: 30%;
+  height: 20%;
   overflow-x: auto;
   transition: 300ms;
   @apply flex flex-row flex-nowrap bg-zinc-800;
@@ -228,6 +237,45 @@ h1 {
   left: 0px;
   width: 100%;
   transition: 300ms
+}
+
+.expand-btn {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 10;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  @apply rounded-full;
+  cursor: pointer;
+}
+
+.participant-options {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 100;
+}
+
+.settings-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  @apply bg-gray-800 rounded-2xl p-6;
+}
+
+.expanded-preview {
+  height: calc(100% - 5rem);
+  @apply flex-wrap;
+  align-content: flex-start;
+}
+
+.expanded-preview .participant-preview {
+  @apply h-1/4;
 }
 
 .participant-view .player {

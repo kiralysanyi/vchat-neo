@@ -7,7 +7,8 @@ interface Participant {
     screenAudioStream?: MediaStream,
     self?: boolean,
     streaming?: boolean,
-    streamingAudio?: boolean
+    streamingAudio?: boolean,
+    volume?: number
 }
 
 export type { Participant };
