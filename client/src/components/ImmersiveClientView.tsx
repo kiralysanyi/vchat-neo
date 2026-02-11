@@ -1,4 +1,4 @@
-import { ArrowsPointingInIcon, ArrowsPointingOutIcon, CameraIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowsPointingInIcon, ArrowsPointingOutIcon, CameraIcon, ChevronDownIcon, ChevronUpIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon } from "@heroicons/react/24/outline";
 import StreamPlayer from "./StreamPlayer";
 import type { Participant } from "../types/Participant";
 import { useEffect, useRef, useState } from "react";
@@ -34,6 +34,7 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
     const [showControls, setShowControls] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const elementRef = useRef<HTMLDivElement>(null);
+    const [expandedView, setExpandedView] = useState(false);
 
     const navigate = useNavigate();
 
@@ -134,6 +135,7 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
             getStreamRef.current(p.producerTransportId, 3, () => {
                 // onclose
                 setViewedStream(undefined)
+                leaveFullscreen();
             }).then(({ stream, close }) => {
                 closeRef.current.closeVid = close
                 setViewedStream(stream)
@@ -153,10 +155,14 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
         }
     }
 
+    const toggleExpandedView = () => {
+        setExpandedView(!expandedView);
+    }
+
     return <>
         {/* Streams / participants */}
         <div className="immersive-view" ref={elementRef}>
-            <div className="participant-view" onMouseEnter={() => setAutoHide(true)} style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "calc(70% - 5rem)" }}>
+            <div className="participant-view" onMouseEnter={() => setAutoHide(true)} style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "calc(80% - 5rem)" }}>
                 {!viewedStream && (selectedP && participants[selectedP]) && ((participants[selectedP].cameraStream) && <StreamPlayer stream={participants[selectedP].cameraStream} />)}
                 {viewedStream && <StreamPlayer stream={viewedStream} />}
                 {(sAudioStream && showControls) && <div className="audio-control">
@@ -167,7 +173,14 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
                 </button>}
                 {sAudioStream && <StreamPlayer stream={sAudioStream} volume={volume} />}
             </div>
-            <div className={`${(viewedStream != undefined && !showControls && isFullscreen) ? "opacity-0" : "opacity-100"} participants-bar`} onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}>
+            <div className={`
+                ${(viewedStream != undefined && !showControls && isFullscreen) ? "opacity-0" : "opacity-100"}
+                participants-bar
+                ${expandedView && "expanded-preview"}
+                `} onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}>
+                <div className="expand-btn" onClick={toggleExpandedView}>
+                    {expandedView ? <ChevronDownIcon width={24} height={24} /> : <ChevronUpIcon width={24} height={24} />}
+                </div>
                 <div className="participant-preview">
                     {cameraStream && <StreamPlayer stream={cameraStream} />}
                     <span className="name">{nickname} (You)</span>
@@ -175,7 +188,7 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
                 {Object.values(participants).map(p => (
                     <div key={p.producerTransportId} className="participant-preview"
                         onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}
-                        onClick={() => { viewParticipant(p.producerTransportId) }}>
+                        onClick={() => { viewParticipant(p.producerTransportId); setExpandedView(false) }}>
                         {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
                         {p.streaming && <span onClick={(e) => {
                             e.stopPropagation();

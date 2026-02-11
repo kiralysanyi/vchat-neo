@@ -187,7 +187,7 @@ const Join = () => {
                 </div>}
                 <button onClick={join}>{newMeet ? "Create" : "Join"}</button>
             </div>
-            <video ref={videoRef} autoPlay className="bg-black" width={400} height={300}></video>
+            <video ref={videoRef} autoPlay className="bg-black joinPreview"></video>
         </div>
     </div>
 }

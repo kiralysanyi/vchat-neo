@@ -32,6 +32,11 @@ select:focus {
   height: 100dvh;
 }
 
+.joinPreview {
+  width: 400px;
+  height: 300px;
+}
+
 h1 {
   font-size: 3rem;
 }
@@ -203,7 +208,7 @@ h1 {
   bottom: 5rem;
   left: 0px;
   width: 100%;
-  height: 30%;
+  height: 20%;
   overflow-x: auto;
   transition: 300ms;
   @apply flex flex-row flex-nowrap bg-zinc-800;
@@ -228,6 +233,27 @@ h1 {
   left: 0px;
   width: 100%;
   transition: 300ms
+}
+
+.expand-btn {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 10;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  @apply rounded-full;
+  cursor: pointer;
+}
+
+.expanded-preview {
+  height: calc(100% - 5rem);
+  @apply flex-wrap;
+  align-content: flex-start;
+}
+
+.expanded-preview .participant-preview {
+  @apply h-1/4;
 }
 
 .participant-view .player {
