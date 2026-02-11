@@ -4,9 +4,6 @@ import { LISTEN_IPS } from "../config"
 import { ExtendedProducer } from "../types/ExtendedProducer"
 import { ExtendedSocket } from "../types/ExtendedSocket"
 
-// TODO: attach this to sockets so you cannot stop consumers from other sockets
-const consumers: Record<string, Consumer<AppData>> = {}
-
 const consumerHandler = (
     router: Router,
     socket: ExtendedSocket,
@@ -14,6 +11,7 @@ const consumerHandler = (
     onConsumeRequest: (producerId: string, accept: Function, deny: Function) => void
 ): void => {
     console.log("Attach consumer handler to ", socket.id)
+    const consumers: Record<string, Consumer<AppData>> = {}
 
 
     let transport: Transport | null = null;
