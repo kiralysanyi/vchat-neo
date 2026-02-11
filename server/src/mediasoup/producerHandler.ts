@@ -79,6 +79,21 @@ const producerHandler = (
         try {
             const producer = await transport.produce({ rtpParameters, kind, appData });
             const payloadId = appData.payloadId;
+
+            // if payload is screenshare then listen for broadcast ending and send out signal
+            if (payloadId === 3 || payloadId === 4) {
+                producer.on("@close", () => {
+                    if (socket.meetid) {
+                        console.log(socket.meetid, transport?.id, payloadId)
+                        socket.to(socket.meetid).emit("removeProducer", transport?.id, payloadId);
+                    } else {
+                        console.log("Socket meetid was not set, broadcasting screenshare end signal aborted")
+                    }
+
+                })
+            }
+
+
             // Store the producer in our record
             producers[transport.id].producers[payloadId] = producer;
 
@@ -101,6 +116,13 @@ const producerHandler = (
     const onPclose = (transportId: string, payloadId: number) => {
         if (producers[transportId] == undefined) {
             return;
+        }
+
+        if (socket.meetid) {
+            console.log(socket.meetid, transportId, payloadId)
+            socket.to(socket.meetid).emit("removeProducer", transportId, payloadId);
+        } else {
+            console.log("Socket meetid was not set, broadcasting screenshare end signal aborted")
         }
 
         if (producers[transportId].producers[payloadId]) {

@@ -200,12 +200,33 @@ const useClient = () => {
             });
         };
 
+        // Note: only used for screenshare because we are not attached to it by default but we need to hide the button anyways when needed
+        const onRemoveProducer = (transportId: string, payloadId: number) => {
+            console.log(transportId, payloadId)
+            if (payloadId === 3 || payloadId === 4) {
+                setParticipants(prev => {
+                    const updated = { ...prev };
+                    if (!updated[transportId]) return prev; // Guard against unknown participant
+
+                    // Map payload IDs to specific stream properties
+                    if (payloadId === 3) updated[transportId].streaming = false;
+                    if (payloadId === 3) updated[transportId].screenStream = undefined;
+                    if (payloadId === 4) updated[transportId].screenAudioStream = undefined;
+                    if (payloadId === 4) updated[transportId].streamingAudio = undefined;
+
+                    return { ...updated };
+                });
+            }
+        }
+
         console.log("Attach newProducer listener")
         socket.on("newProducer", onNewProducer);
+        socket.on("removeProducer", onRemoveProducer);
 
         return () => {
             console.log("Detach newProducer")
             socket.off("newProducer", onNewProducer);
+            socket.off("removeProducer", onRemoveProducer)
         };
     }, [device, authenticated, initialized]);
 
