@@ -1,4 +1,4 @@
-import { Transport, Router, DtlsParameters, RtpCapabilities, MediaKind, Consumer } from "mediasoup/node/lib/types"
+import { Transport, Router, DtlsParameters, RtpCapabilities, MediaKind, Consumer, AppData } from "mediasoup/node/lib/types"
 import createTransport from "./createTransport"
 import { LISTEN_IPS } from "../config"
 import { ExtendedProducer } from "../types/ExtendedProducer"
@@ -11,6 +11,7 @@ const consumerHandler = (
     onConsumeRequest: (producerId: string, accept: Function, deny: Function) => void
 ): void => {
     console.log("Attach consumer handler to ", socket.id)
+    const consumers: Record<string, Consumer<AppData>> = {}
 
 
     let transport: Transport | null = null;
@@ -64,6 +65,8 @@ const consumerHandler = (
                     socket.emit("conclose", consumer.id)
                 })
 
+                consumers[consumer.id] = consumer;
+
                 cb({
                     id: consumer.id,
                     producerId,
@@ -79,6 +82,15 @@ const consumerHandler = (
         });
     };
 
+    const onStopConsume = (id: string) => {
+        if (consumers[id]) {
+            consumers[id].close();
+            delete consumers[id]
+        }
+    }
+
+    socket.on("stopConsume", onStopConsume);
+
     // Attach listeners
     socket.on("createConsumerTransport", onCreateConsumerTransport);
     socket.on("connectConsumerTransport", onConnectConsumerTransport);
@@ -88,6 +100,7 @@ const consumerHandler = (
         socket.off("createConsumerTransport", onCreateConsumerTransport);
         socket.off("connectConsumerTransport", onConnectConsumerTransport);
         socket.off("consume", onConsume);
+        socket.off("stopConsume", onStopConsume)
         transport?.close();
     };
 };

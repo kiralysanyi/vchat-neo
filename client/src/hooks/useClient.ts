@@ -156,6 +156,19 @@ const useClient = () => {
         const onNewProducer = async (transportId: string, payloadId: number) => {
             if (!getStreamFunc || !connected) return;
 
+            setParticipants(prev => {
+                const updated = { ...prev }
+                // Only report that screenshare available
+                if (payloadId === 3) updated[transportId].streaming = true;
+                if (payloadId === 4) updated[transportId].streamingAudio = true;
+                return { ...updated }
+            })
+
+            if (payloadId === 3 || payloadId === 4) {
+                return;
+            }
+
+
             const { stream } = await getStreamFunc(transportId, payloadId, () => {
                 // On Close: Remove stream from participant
                 setParticipants(prev => {
@@ -181,9 +194,7 @@ const useClient = () => {
                 // Map payload IDs to specific stream properties
                 if (payloadId === 1) updated[transportId].cameraStream = stream;
                 if (payloadId === 2) updated[transportId].microphoneStream = stream;
-                // Only report that screenshare available
-                if (payloadId === 3) updated[transportId].streaming = true;
-                if (payloadId === 4) updated[transportId].streamingAudio = true;
+
 
                 return { ...updated };
             });

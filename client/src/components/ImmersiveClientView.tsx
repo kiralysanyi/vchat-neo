@@ -80,6 +80,7 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
     }, [autoHide])
 
     const closeStream = () => {
+        console.log(closeRef)
         if (closeRef.current.closeVid) {
             closeRef.current.closeVid();
         }
@@ -87,6 +88,8 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
         if (closeRef.current.closeAudio) {
             closeRef.current.closeAudio();
         }
+
+        closeRef.current = { closeAudio: undefined, closeVid: undefined }
     }
 
     useEffect(() => {
