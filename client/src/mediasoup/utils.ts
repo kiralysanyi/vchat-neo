@@ -57,6 +57,7 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                         options.codecOptions = codecOptions ? codecOptions : undefined
 
 
+                        // use simulcast with vp8
                         if (codec) {
                             if (codec.mimeType == "video/VP8") {
                                 options.encodings = [

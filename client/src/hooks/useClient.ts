@@ -247,7 +247,7 @@ const useClient = () => {
 
     useEffect(() => {
         if (cameraStream && sendStream && sendTransport) {
-            const { codec, codecOptions } = getCodecOption("VP8")
+            const { codec, codecOptions } = getCodecOption("VP9")
             sendStream(cameraStream, 1, codec, codecOptions).then(() => {
                 console.log("Sending camera stream")
                 socket.emit("addstream", 1)
