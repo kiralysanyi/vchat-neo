@@ -1,4 +1,4 @@
-import { ArrowsPointingInIcon, ArrowsPointingOutIcon, CameraIcon, ChevronDownIcon, ChevronUpIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowsPointingInIcon, ArrowsPointingOutIcon, CameraIcon, ChevronDownIcon, ChevronUpIcon, Cog6ToothIcon, ComputerDesktopIcon, MicrophoneIcon, PhoneArrowDownLeftIcon } from "@heroicons/react/24/outline";
 import StreamPlayer from "./StreamPlayer";
 import type { Participant } from "../types/Participant";
 import { useEffect, useRef, useState } from "react";
@@ -23,10 +23,11 @@ interface PropsType {
     }>,
     toggleCamera: () => void,
     toggleMicrophone: () => void,
-    toggleScreen: () => void
+    toggleScreen: () => void,
+    setParticipants: React.Dispatch<React.SetStateAction<Record<string, Participant>>>
 }
 
-const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nickname, participants, getStreamRef, closeRef, toggleCamera, toggleMicrophone, toggleScreen }: PropsType) => {
+const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nickname, participants, getStreamRef, closeRef, toggleCamera, toggleMicrophone, toggleScreen, setParticipants }: PropsType) => {
     const [selectedP, setSelectedP] = useState<string>();
     const [viewedStream, setViewedStream] = useState<MediaStream>();
     const [sAudioStream, setSAudioStream] = useState<MediaStream>();
@@ -35,6 +36,7 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
     const [isFullscreen, setIsFullscreen] = useState(false);
     const elementRef = useRef<HTMLDivElement>(null);
     const [expandedView, setExpandedView] = useState(false);
+    const [configuredP, setConfiguredP] = useState<Participant>();
 
     const navigate = useNavigate();
 
@@ -162,6 +164,10 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
     return <>
         {/* Streams / participants */}
         <div className="immersive-view" ref={elementRef}>
+            {/* Play audio */}
+            {Object.values(participants).map(p => (
+                p.microphoneStream && <StreamPlayer volume={p.volume} key={p.producerTransportId} stream={p.microphoneStream} />
+            ))}
             <div className="participant-view" onMouseEnter={() => setAutoHide(true)} style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "calc(80% - 5rem)" }}>
                 {!viewedStream && (selectedP && participants[selectedP]) && ((participants[selectedP].cameraStream) && <StreamPlayer stream={participants[selectedP].cameraStream} />)}
                 {viewedStream && <StreamPlayer stream={viewedStream} />}
@@ -197,7 +203,11 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
                             <ComputerDesktopIcon width={28} height={28} />
                         </span>}
                         <span className="name">{p.nickname}</span>
-                        <span className="options"></span>
+                        <span className="options" onClick={() => {
+                            setConfiguredP(p);
+                        }}>
+                            <Cog6ToothIcon width={28} height={28} />
+                        </span>
                     </div>
                 ))}
             </div>
@@ -221,6 +231,24 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
                 </button>
             </div>
         </div>
+        {configuredP && <div className="participant-options">
+            <div className="settings-modal">
+                <h1>Options for: {configuredP?.nickname}</h1>
+                <div className="form-group">
+                    <label htmlFor="vol">Volume</label>
+                    <input value={configuredP.volume} onChange={(e) => {
+                        if (configuredP) {
+                            const newData = { ...participants };
+                            newData[configuredP.producerTransportId].volume = parseFloat(e.target.value);
+                            setParticipants(newData);
+                        }
+                    }} type="range" step={0.1} min={0} max={1} id="vol" name="vol" />
+                </div>
+                <button onClick={() => {
+                    setConfiguredP(undefined);
+                }}>Close</button>
+            </div>
+        </div>}
     </>
 }
 
