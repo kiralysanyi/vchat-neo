@@ -3,13 +3,14 @@ import express from "express";
 import http from "http"
 import { Server } from "socket.io";
 import createRouter from "./mediasoup/createRouter";
-import { CLEANUP_INTERVAL, PORT, SERVERPASS } from "./config";
+import { CLEANUP_INTERVAL, ENABLE_API, PORT, SERVERPASS } from "./config";
 import { ExtendedSocket } from "./types/ExtendedSocket";
 import cors from "cors";
 import { Meeting } from "./types/Meeting";
 import * as fs from "fs";
 import roomHandler from "./mediasoup/roomHandler";
 import createWorkers from "./mediasoup/createWorkers";
+import createApiHandler from "./api_external/router";
 
 const app = express();
 const server = http.createServer(app);
@@ -324,6 +325,11 @@ createWorkers().then(async (workers) => {
 
     // handle non existent pages
 
+    if (ENABLE_API == true) {
+        app.use("/api/external", createApiHandler(meetings, workers, cleanMeeting));
+        console.log("External api enabled")
+    }
+
     // host client if available
     if (fs.existsSync("./public")) {
         console.log("Hosting client")
@@ -331,7 +337,7 @@ createWorkers().then(async (workers) => {
     }
 
     app.use((req, res) => {
-        res.sendFile("index.html", {root: "./public"})
+        res.sendFile("index.html", { root: "./public" })
     })
 
     server.listen(PORT, () => {

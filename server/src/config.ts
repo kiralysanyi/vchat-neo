@@ -6,7 +6,7 @@ const LISTEN_IPS = process.env.LISTEN_IPS ? process.env.LISTEN_IPS.split(";") : 
 const WORKERS = process.env.WORKERS ? parseInt(process.env.WORKERS) : 1
 const SERVERPASS = process.env.SERVERPASS ? process.env.SERVERPASS : undefined
 const CLEANUP_INTERVAL = process.env.CLEANUP_INTERVAL ? parseInt(process.env.CLEANUP_INTERVAL) : 60
+const ENABLE_API = process.env.ENABLE_API ? process.env.ENABLE_API === "true" : false
 
-console.log("Config: ", PORT, LISTEN_IPS, WORKERS)
 
-export { PORT, LISTEN_IPS, WORKERS, SERVERPASS, CLEANUP_INTERVAL }
+export { PORT, LISTEN_IPS, WORKERS, SERVERPASS, CLEANUP_INTERVAL, ENABLE_API }
