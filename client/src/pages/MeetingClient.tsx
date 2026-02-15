@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { getCamera } from "../capture/getCamera";
 import { getMicrophone } from "../capture/getMicrophone";
@@ -10,6 +10,7 @@ import useStreamConfig from "../hooks/useStreamConfig";
 import getCodecOption from "../utils/getCodecOption";
 import useWakeLock from "../hooks/useWakeLock";
 import ImmersiveClientView from "../components/ImmersiveClientView";
+import { DataContext } from "../providers/DataProvider";
 
 const MeetingClient = () => {
     const {
@@ -25,7 +26,7 @@ const MeetingClient = () => {
         getStreamRef,
         sendStream,
         screenStream, setScreenStream,
-        passError, password, setPassword, authenticate
+        passError, password, setPassword, authenticate,
     } = useClient();
 
     const streamOptions = useStreamConfig();
@@ -33,6 +34,8 @@ const MeetingClient = () => {
     const params = useParams();
 
     const [showScreenOptions, setShowScreenOptions] = useState(false);
+
+    const { mKey } = useContext(DataContext);
 
 
     // UI Handlers
@@ -146,7 +149,7 @@ const MeetingClient = () => {
             {/* Header */}
             <div className="header">
                 <span>
-                    <UserGroupIcon width={24} height={24} /> {params.id}
+                    <UserGroupIcon width={24} height={24} /> {(mKey == undefined) && params.id}
                 </span>
                 <span>
                     <UserCircleIcon width={24} height={24} /> {Object.keys(participants).length + 1}

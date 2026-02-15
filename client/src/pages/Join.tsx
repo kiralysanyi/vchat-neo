@@ -1,12 +1,12 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import config from "../config";
 import { DataContext } from "../providers/DataProvider";
 import { checkCamera, getCamera } from "../capture/getCamera";
 import { checkMicrophone, getMicrophone } from "../capture/getMicrophone";
 
 const Join = () => {
-    const [meetingInfo, setMeetingInfo] = useState<{ id: string, participants: Record<string, {}> } | null>(null)
+    const [meetingInfo, setMeetingInfo] = useState<{ id: string, participants: Record<string, {}>, external: boolean } | null>(null)
     const params = useParams();
     document.title = "Join - " + params.id;
     const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -18,7 +18,8 @@ const Join = () => {
         microphoneStream,
         setMicrophoneStream,
         setJoined,
-        setNickname
+        setNickname,
+        setMKey
     } = useContext(DataContext)
 
     const [newNickname, setNewNickname] = useState("");
@@ -161,6 +162,42 @@ const Join = () => {
 
     // password manager workaround, we dont want that garbage here
     const [inpType, setInpType] = useState("text")
+
+    // external api stuff
+
+    const [queryParams] = useSearchParams();
+
+    useEffect(() => {
+        if (meetingInfo?.external == true) {
+            let mKey = queryParams.get("key");
+            let nickname = queryParams.get("nickname");
+            const econfig = sessionStorage.getItem("econfig");
+            console.log(econfig)
+            if (econfig != null) {
+                const econfigParsed = JSON.parse(econfig);
+                if (econfigParsed.mId === meetingInfo.id) {
+                    mKey = econfigParsed.mKey;
+                    nickname = econfigParsed.nickname;
+                    console.log("Loaded config from sessionstorage");
+                }
+            }
+
+            if (mKey && nickname) {
+                setMKey?.(mKey);
+                setJoined?.(true);
+                setNewNickname(nickname);
+                sessionStorage.setItem("econfig", JSON.stringify({
+                    mKey,
+                    nickname,
+                    mId: meetingInfo.id
+                }))
+                navigate("/meeting/client/" + params.id)
+            } else {
+                console.error("No key or nickname defined for external meeting");
+                setError("Failed to launch client automatically")
+            }
+        }
+    }, [meetingInfo, queryParams])
 
 
     return <div className="page">

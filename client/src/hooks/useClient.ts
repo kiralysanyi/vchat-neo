@@ -18,7 +18,8 @@ const useClient = () => {
         microphoneStream,
         setMicrophoneStream,
         setCameraStream,
-        nickname
+        nickname,
+        mKey
     } = useContext(DataContext);
 
     const navigate = useNavigate();
@@ -57,6 +58,13 @@ const useClient = () => {
 
     useEffect(() => {
         const onAuthNeeded = () => {
+            if (mKey) {
+                setPassError(undefined);
+                setPassword(mKey);
+                authenticate();
+                return;
+            }
+
             if (password.length > 0) {
                 authenticate();
             } else {

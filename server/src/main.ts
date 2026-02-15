@@ -319,7 +319,8 @@ createWorkers().then(async (workers) => {
 
         return res.json({
             id: meeting.id,
-            participants: meeting.participants
+            participants: meeting.participants,
+            external: meeting.external == true
         })
     })
 
