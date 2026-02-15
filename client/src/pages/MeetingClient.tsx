@@ -154,7 +154,7 @@ const MeetingClient = () => {
                 <span>
                     <UserCircleIcon width={24} height={24} /> {Object.keys(participants).length + 1}
                 </span>
-                <button className={`ml-auto ${linkCopied && "btn-green"}`} onClick={copyLink}>Copy link</button>
+                {(mKey == undefined) && <button className={`ml-auto ${linkCopied && "btn-green"}`} onClick={copyLink}>Copy link</button>}
             </div>
 
             {/* Participants view */}
