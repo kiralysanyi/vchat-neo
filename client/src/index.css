@@ -269,6 +269,7 @@ h1 {
   position: fixed;
   top: 50%;
   left: 50%;
+  width: 70%;
   transform: translate(-50%, -50%);
   @apply bg-gray-800 rounded-2xl p-6;
 }
@@ -333,6 +334,16 @@ input[type="range"] {
 @media (max-height: 400px) {
   .participant {
     @apply h-full;
+  }
+}
+
+@media (max-width: 600px) {
+  .settings-modal {
+    width: 90% !important;
+  }
+
+  .settings-modal h1 {
+    font-size: 2rem;
   }
 }
 
