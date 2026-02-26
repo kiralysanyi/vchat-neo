@@ -171,7 +171,7 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
             {Object.values(participants).map(p => (
                 p.microphoneStream && <StreamPlayer volume={p.volume} key={p.producerTransportId} stream={p.microphoneStream} />
             ))}
-            <div className="participant-view" onMouseEnter={() => setAutoHide(true)} style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "calc(80% - 5rem)" }}>
+            <div className={`participant-view ${(isFullscreen && !showControls && viewedStream) ? "view-full" : ""}`} onMouseEnter={() => setAutoHide(true)} >
                 {!viewedStream && (selectedP && participants[selectedP]) && ((participants[selectedP].cameraStream) && <StreamPlayer stream={participants[selectedP].cameraStream} />)}
                 {viewedStream && <StreamPlayer stream={viewedStream} />}
                 {(sAudioStream && showControls) && <div className="audio-control">
@@ -190,7 +190,7 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
                 <div className="expand-btn" onClick={toggleExpandedView}>
                     {expandedView ? <ChevronDownIcon width={24} height={24} /> : <ChevronUpIcon width={24} height={24} />}
                 </div>
-                <div className="w-full h-full flex flex-row flex-nowrap absolute left-0 top-0 overflow-x-auto">
+                <div className={`participant-list ${expandedView && "expanded-preview"}`}>
                     <div className="participant-preview">
                         {cameraStream && <StreamPlayer stream={cameraStream} />}
                         <span className="name">{nickname} (You)</span>
