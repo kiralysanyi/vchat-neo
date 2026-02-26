@@ -171,7 +171,7 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
             {Object.values(participants).map(p => (
                 p.microphoneStream && <StreamPlayer volume={p.volume} key={p.producerTransportId} stream={p.microphoneStream} />
             ))}
-            <div className="participant-view" onMouseEnter={() => setAutoHide(true)} style={{ height: (isFullscreen && !showControls && viewedStream) ? "100%" : "calc(80% - 5rem)" }}>
+            <div className={`participant-view ${(isFullscreen && !showControls && viewedStream) ? "view-full" : ""}`} onMouseEnter={() => setAutoHide(true)} >
                 {!viewedStream && (selectedP && participants[selectedP]) && ((participants[selectedP].cameraStream) && <StreamPlayer stream={participants[selectedP].cameraStream} />)}
                 {viewedStream && <StreamPlayer stream={viewedStream} />}
                 {(sAudioStream && showControls) && <div className="audio-control">
@@ -190,29 +190,32 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
                 <div className="expand-btn" onClick={toggleExpandedView}>
                     {expandedView ? <ChevronDownIcon width={24} height={24} /> : <ChevronUpIcon width={24} height={24} />}
                 </div>
-                <div className="participant-preview">
-                    {cameraStream && <StreamPlayer stream={cameraStream} />}
-                    <span className="name">{nickname} (You)</span>
-                </div>
-                {Object.values(participants).map(p => (
-                    <div key={p.producerTransportId} className="participant-preview"
-                        onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}
-                        onClick={() => { viewParticipant(p.producerTransportId); setExpandedView(false) }}>
-                        {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
-                        {p.streaming && <span onClick={(e) => {
-                            e.stopPropagation();
-                            viewStream(p)
-                        }} className="view">
-                            <ComputerDesktopIcon width={28} height={28} />
-                        </span>}
-                        <span className="name">{p.nickname}</span>
-                        <span className="options" onClick={() => {
-                            setConfiguredP(p);
-                        }}>
-                            <Cog6ToothIcon width={28} height={28} />
-                        </span>
+                <div className={`participant-list ${expandedView && "expanded-preview"}`}>
+                    <div className="participant-preview">
+                        {cameraStream && <StreamPlayer stream={cameraStream} />}
+                        <span className="name">{nickname} (You)</span>
                     </div>
-                ))}
+                    {Object.values(participants).map(p => (
+                        <div key={p.producerTransportId} className="participant-preview"
+                            onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}
+                            onClick={() => { viewParticipant(p.producerTransportId); setExpandedView(false) }}>
+                            {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
+                            {p.streaming && <span onClick={(e) => {
+                                e.stopPropagation();
+                                viewStream(p)
+                            }} className="view">
+                                <ComputerDesktopIcon width={28} height={28} />
+                            </span>}
+                            <span className="name">{p.nickname}</span>
+                            <span className="options" onClick={() => {
+                                p.volume = p.volume ? p.volume : 1;
+                                setConfiguredP(p);
+                            }}>
+                                <Cog6ToothIcon width={28} height={28} />
+                            </span>
+                        </div>
+                    ))}
+                </div>
             </div>
             {/* Dock */}
             <div className={`dock ${(isFullscreen && !showControls) && "dock-hidden"}`}
