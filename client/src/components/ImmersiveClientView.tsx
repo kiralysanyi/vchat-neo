@@ -190,29 +190,32 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
                 <div className="expand-btn" onClick={toggleExpandedView}>
                     {expandedView ? <ChevronDownIcon width={24} height={24} /> : <ChevronUpIcon width={24} height={24} />}
                 </div>
-                <div className="participant-preview">
-                    {cameraStream && <StreamPlayer stream={cameraStream} />}
-                    <span className="name">{nickname} (You)</span>
-                </div>
-                {Object.values(participants).map(p => (
-                    <div key={p.producerTransportId} className="participant-preview"
-                        onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}
-                        onClick={() => { viewParticipant(p.producerTransportId); setExpandedView(false) }}>
-                        {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
-                        {p.streaming && <span onClick={(e) => {
-                            e.stopPropagation();
-                            viewStream(p)
-                        }} className="view">
-                            <ComputerDesktopIcon width={28} height={28} />
-                        </span>}
-                        <span className="name">{p.nickname}</span>
-                        <span className="options" onClick={() => {
-                            setConfiguredP(p);
-                        }}>
-                            <Cog6ToothIcon width={28} height={28} />
-                        </span>
+                <div className="w-full h-full flex flex-row flex-nowrap absolute left-0 top-0 overflow-x-auto">
+                    <div className="participant-preview">
+                        {cameraStream && <StreamPlayer stream={cameraStream} />}
+                        <span className="name">{nickname} (You)</span>
                     </div>
-                ))}
+                    {Object.values(participants).map(p => (
+                        <div key={p.producerTransportId} className="participant-preview"
+                            onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}
+                            onClick={() => { viewParticipant(p.producerTransportId); setExpandedView(false) }}>
+                            {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
+                            {p.streaming && <span onClick={(e) => {
+                                e.stopPropagation();
+                                viewStream(p)
+                            }} className="view">
+                                <ComputerDesktopIcon width={28} height={28} />
+                            </span>}
+                            <span className="name">{p.nickname}</span>
+                            <span className="options" onClick={() => {
+                                p.volume = p.volume ? p.volume : 1;
+                                setConfiguredP(p);
+                            }}>
+                                <Cog6ToothIcon width={28} height={28} />
+                            </span>
+                        </div>
+                    ))}
+                </div>
             </div>
             {/* Dock */}
             <div className={`dock ${(isFullscreen && !showControls) && "dock-hidden"}`}
