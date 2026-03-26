@@ -3,7 +3,7 @@ import { useParams } from "react-router";
 import { getCamera } from "../capture/getCamera";
 import { getMicrophone } from "../capture/getMicrophone";
 import { getScreen } from "../capture/getScreen";
-import { UserCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
+import { ExclamationCircleIcon, UserCircleIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import useClient from "../hooks/useClient";
 import socket from "../socket";
 import useStreamConfig from "../hooks/useStreamConfig";
@@ -37,6 +37,8 @@ const MeetingClient = () => {
 
     const { mKey } = useContext(DataContext);
 
+    const [warning, setWarning] = useState<string>()
+
 
     // UI Handlers
     const toggleCamera = async () => {
@@ -65,6 +67,32 @@ const MeetingClient = () => {
         } else {
             try {
                 const stream = await getMicrophone();
+                if (!stream) {
+                    console.error("Could not get audio stream")
+                    return;
+                }
+
+                const appliedSettings = stream.getAudioTracks()[0].getSettings();
+                let warnMessage = undefined;
+                if (appliedSettings.noiseSuppression == false) {
+                    console.warn("Browser did not apply noise suppression")
+                    if (!warnMessage) {
+                        warnMessage = "Could not apply: noise suppression"
+                    }
+                }
+
+                if (appliedSettings.echoCancellation == false) {
+                    console.warn("Browser did not apply echoCancellation")
+                    if (!warnMessage) {
+                        warnMessage = "Could not apply: echo cancellation"
+                    } else {
+                        warnMessage += ", echo cancellation"
+                    }
+                }
+
+                if (warnMessage) {
+                    setWarning(warnMessage)
+                }
                 setMicrophoneStream?.(stream);
             } catch (e) { console.error(e); }
         }
@@ -154,6 +182,10 @@ const MeetingClient = () => {
                 <span>
                     <UserCircleIcon width={24} height={24} /> {Object.keys(participants).length + 1}
                 </span>
+                {warning && <span className="warn">
+                    <ExclamationCircleIcon width={28} height={28} color="white" />
+                    <a className="warn-message">{warning}</a>
+                </span>}
                 {(mKey == undefined) && <button className={`ml-auto ${linkCopied && "btn-green"}`} onClick={copyLink}>Copy link</button>}
             </div>
 

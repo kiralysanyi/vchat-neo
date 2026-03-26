@@ -389,3 +389,16 @@ input[type="range"] {
     bottom: 5rem;
   }
 }
+
+.warn {
+  @apply bg-yellow-600 rounded-full w-auto p-1 overflow-hidden relative;
+  @apply flex flex-row;
+}
+
+.warn:hover .warn-message {
+  @apply block;
+}
+
+.warn-message{
+  @apply hidden;
+}
