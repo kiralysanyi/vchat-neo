@@ -50,8 +50,17 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                             track: track,
                             appData: {
                                 payloadId: payloadId
-                            }
+                            },
                         };
+
+                        // prioritize audio over video
+                        if (codec) {
+                            if (codec.kind == "audio") {
+                                options.encodings = [{priority: "high", networkPriority: "high", adaptivePtime: true}]
+                            } else {
+                                options.encodings = [{priority: "low", networkPriority: "low", scalabilityMode: "L1T3"}]
+                            }
+                        }
 
                         options.codec = codec ? codec : undefined
                         options.codecOptions = codecOptions ? codecOptions : undefined

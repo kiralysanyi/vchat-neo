@@ -3,7 +3,7 @@ import type { ProducerCodecOptions, RtpCodecCapability } from "mediasoup-client/
 const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCodecCapability, codecOptions: ProducerCodecOptions } => {
     let codec: RtpCodecCapability;
     let codecOptions: ProducerCodecOptions = {
-        videoGoogleMaxBitrate: highQuality ? 10_000_000 : 3_000_000,
+        videoGoogleMaxBitrate: highQuality ? 5_000_000 : 1_000_000,
         videoGoogleMinBitrate: highQuality ? 500_000 : 100_000,
         videoGoogleStartBitrate: highQuality ? 1_000_000 : 200_000
     }
@@ -17,7 +17,7 @@ const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCod
                 clockRate: 90000,
                 parameters: {
                     'profile-id': 0,
-                    'scalabilityMode': 'L3T3'
+                    'scalabilityMode': 'L1T3'
                 }
             }
 
@@ -62,7 +62,7 @@ const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCod
                 clockRate: 90000,
                 parameters: {
                     'profile-id': 0,
-                    'scalabilityMode': 'L3T3'
+                    'scalabilityMode': 'L1T3'
                 },
             }
             break;
