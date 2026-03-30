@@ -6,6 +6,7 @@ import { checkScreenSupport } from "../capture/getScreen";
 import { useNavigate } from "react-router";
 import { checkCamera } from "../capture/getCamera";
 import { checkMicrophone } from "../capture/getMicrophone";
+import Visualizer from "./Visualizer";
 
 interface PropsType {
     cameraStream: MediaStream | null,
@@ -192,14 +193,14 @@ const ImmersiveClientView = ({ cameraStream, microphoneStream, screenStream, nic
                 </div>
                 <div className={`participant-list ${expandedView && "expanded-preview"}`}>
                     <div className="participant-preview">
-                        {cameraStream && <StreamPlayer stream={cameraStream} />}
+                        {cameraStream ? <StreamPlayer stream={cameraStream} /> : microphoneStream && <Visualizer audioStream={microphoneStream}/>}
                         <span className="name">{nickname} (You)</span>
                     </div>
                     {Object.values(participants).map(p => (
                         <div key={p.producerTransportId} className="participant-preview"
                             onMouseEnter={() => { setAutoHide(false) }} onMouseLeave={() => setAutoHide(true)}
                             onClick={() => { viewParticipant(p.producerTransportId); setExpandedView(false) }}>
-                            {p.cameraStream && <StreamPlayer stream={p.cameraStream} />}
+                            {p.cameraStream ? <StreamPlayer stream={p.cameraStream} /> : p.microphoneStream && <Visualizer audioStream={p.microphoneStream}/>}
                             {p.streaming && <span onClick={(e) => {
                                 e.stopPropagation();
                                 viewStream(p)
