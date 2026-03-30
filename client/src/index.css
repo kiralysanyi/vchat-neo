@@ -402,8 +402,3 @@ input[type="range"] {
 .warn-message{
   @apply hidden;
 }
-
-.visualiser {
-  @apply w-full h-full;
-  transition: 200ms;
-}
