@@ -276,6 +276,10 @@ const useClient = () => {
                     'usedtx': 1,
                     'useinbandfec': 1
                 }
+            }, {
+                opusDtx: true,
+                opusFec: true,
+                opusPtime: 10
             }).then(() => {
                 console.log("Sending microphone stream")
                 socket.emit("addstream", 2)

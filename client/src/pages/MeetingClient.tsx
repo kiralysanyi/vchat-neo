@@ -234,7 +234,7 @@ const MeetingClient = () => {
                         <input type="checkbox" checked={streamOptions.highBitrate} onChange={(ev) => streamOptions.setHighBitrate(ev.target.checked)} />
                     </div>
 
-                    <button onClick={() => setShowScreenOptions(false)}>Cancel</button>
+                    <button className="btn-secondary" onClick={() => setShowScreenOptions(false)}>Cancel</button>
                     <button onClick={startStream}>Start</button>
                 </div>
             </div>}

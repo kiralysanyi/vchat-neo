@@ -9,7 +9,7 @@ const createRouter = async (worker: Worker) => {
             parameters: {
                 'x-google-start-bitrate': 15000,
                 'profile-id': 0,
-                'scalabilityMode': 'L3T3'
+                'scalabilityMode': 'L1T3'
             },
             rtcpFeedback: [
                 { type: 'nack' },
@@ -57,15 +57,10 @@ const createRouter = async (worker: Worker) => {
             clockRate: 48000,
             channels: 2,
             parameters: {
-                // Tells the browser to send stereo
-                'sprop-stereo': 1,
-                'stereo': 1,
-                // Increase bitrate for high-quality music/video audio
-                // 128000 (128kbps) is usually the sweet spot for screenshare
-                'maxaveragebitrate': 128000,
-                // Disable DTX to prevent the audio from "cutting out" during quiet parts
-                'usedtx': 0,
-                'useinbandfec': 1
+                'maxaveragebitrate': 16000,
+                'usedtx': 1,
+                'useinbandfec': 1,
+                'minptime': 10
             }
         },
         {
@@ -74,8 +69,14 @@ const createRouter = async (worker: Worker) => {
             clockRate: 48000,
             channels: 2,
             parameters: {
-                'maxaveragebitrate': 16000,
-                'usedtx': 1,
+                // Tells the browser to send stereo
+                'sprop-stereo': 1,
+                'stereo': 1,
+                // Increase bitrate for high-quality music/video audio
+                // 128000 (128kbps) is usually the sweet spot for screenshare
+                'maxaveragebitrate': 128000,
+                // Disable DTX to prevent the audio from "cutting out" during quiet parts
+                'usedtx': 0,
                 'useinbandfec': 1
             }
         }
