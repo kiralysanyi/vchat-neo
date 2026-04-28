@@ -4,8 +4,9 @@ const getCamera = async (): Promise<MediaStream | null> => {
     return new Promise((resolve) => {
         navigator.mediaDevices.getUserMedia({
             audio: false, video: {
-                width: { max: 1280, ideal: 1280 },
-                height: { max: 720, ideal: 720 }
+                width: { max: 1280, ideal: 1280, min: 800 },
+                height: { max: 720, ideal: 720, min: 600 },
+                frameRate: { exact: 15, ideal: 15, max: 15 }
             }
         }).then((stream) => {
             resolve(stream)
