@@ -10,7 +10,12 @@ export default defineConfig({
       name: "VChat-Neo",
       short_name: "VChat",
       start_url: "/",
-      description: "VChat-Neo by kiralysanyi"
+      description: "VChat-Neo by kiralysanyi",
+      icons: [{
+        src: "/vite.svg",
+        type: "image/svg+xml",
+        sizes: '256x256'
+      }]
     }
   })],
 })
