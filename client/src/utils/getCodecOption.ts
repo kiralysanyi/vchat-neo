@@ -3,8 +3,8 @@ import type { ProducerCodecOptions, RtpCodecCapability } from "mediasoup-client/
 const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCodecCapability, codecOptions: ProducerCodecOptions } => {
     let codec: RtpCodecCapability;
     let codecOptions: ProducerCodecOptions = {
-        videoGoogleMaxBitrate: highQuality ? 8_000_000 : 2_000_000,
-        videoGoogleMinBitrate: highQuality ? 1_000_000 : 500_000,
+        videoGoogleMaxBitrate: highQuality ? 8_000_000 : 1_500_000,
+        videoGoogleMinBitrate: highQuality ? 1_000_000 : 300_000,
         videoGoogleStartBitrate: highQuality ? 2_000_000 : 800_000
     }
 
