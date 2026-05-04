@@ -182,8 +182,6 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: 
 
                             socket.on("conclose", onConClose)
 
-                            consumer.resume();
-
                             resolveStream({
                                 stream: new MediaStream([consumer.track]), close: () => {
                                     socket.emit("stopConsume", consumer.id);
