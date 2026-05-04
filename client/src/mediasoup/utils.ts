@@ -72,19 +72,19 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                                 options.encodings = [
                                     {
                                         rid: "r0",
-                                        maxBitrate: 150000,
+                                        maxBitrate: 150_000,
                                         scaleResolutionDownBy: 4,
                                         scalabilityMode: "L1T3"
                                     },
                                     {
                                         rid: "r1",
-                                        maxBitrate: 500000,
+                                        maxBitrate: 500_000,
                                         scaleResolutionDownBy: 2,
                                         scalabilityMode: "L1T3"
                                     },
                                     {
                                         rid: "r2",
-                                        maxBitrate: 2000000,
+                                        maxBitrate: 1_000_000,
                                         scaleResolutionDownBy: 1,
                                         scalabilityMode: "L1T3"
                                     }
