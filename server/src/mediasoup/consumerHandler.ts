@@ -45,15 +45,13 @@ const consumerHandler = (
                     return cb({ error: "Cannot consume" });
                 }
 
-                // TODO: if camera freeze still occours, check this part
+            
                 const consumer = await transport!.consume({
                     producerId,
                     rtpCapabilities,
-                    paused: true, // Start paused to prevent packet loss before client is ready
+                    paused: false,
                 });
 
-                // Resume the consumer so media starts flowing
-                await consumer.resume();
 
                 // attach producer close listener
                 producer.on("@close", () => {
