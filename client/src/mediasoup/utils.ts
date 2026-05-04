@@ -58,7 +58,7 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                             if (codec.kind == "audio") {
                                 options.encodings = [{priority: "high", networkPriority: "high", adaptivePtime: true}]
                             } else {
-                                options.encodings = [{priority: "low", networkPriority: "low", scalabilityMode: "L1T3"}]
+                                options.encodings = [{priority: "medium", networkPriority: "medium", scalabilityMode: "L1T3"}]
                             }
                         }
 
@@ -181,6 +181,8 @@ const createRecvTransport = (socket: Socket, device: Device, onCreateTransport: 
 
 
                             socket.on("conclose", onConClose)
+
+                            consumer.resume();
 
                             resolveStream({
                                 stream: new MediaStream([consumer.track]), close: () => {

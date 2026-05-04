@@ -45,6 +45,7 @@ const consumerHandler = (
                     return cb({ error: "Cannot consume" });
                 }
 
+                // TODO: if camera freeze still occours, check this part
                 const consumer = await transport!.consume({
                     producerId,
                     rtpCapabilities,
