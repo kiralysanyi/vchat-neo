@@ -18,7 +18,14 @@ const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCod
                 parameters: {
                     'profile-id': 0,
                     'scalabilityMode': 'L1T3'
-                }
+                },
+                rtcpFeedback: [
+                    { type: 'nack' },
+                    { type: 'nack', parameter: 'pli' },
+                    { type: 'ccm', parameter: 'fir' },
+                    { type: 'goog-remb' },
+                    { type: 'transport-cc' }
+                ]
             }
 
             break;
