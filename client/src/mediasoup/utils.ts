@@ -56,9 +56,9 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                         // prioritize audio over video
                         if (codec) {
                             if (codec.kind == "audio") {
-                                options.encodings = [{priority: "high", networkPriority: "high", adaptivePtime: true}]
+                                options.encodings = [{ priority: "high", networkPriority: "high", adaptivePtime: true }]
                             } else {
-                                options.encodings = [{priority: "medium", networkPriority: "medium", scalabilityMode: "L1T3"}]
+                                options.encodings = [{ priority: "medium", networkPriority: "medium", scalabilityMode: "L1T3" }]
                             }
                         }
 
@@ -68,27 +68,24 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
 
                         // use simulcast with vp8
                         if (codec) {
-                            if (codec.mimeType == "video/VP8") {
+                            // use simulcast with vp8
+                            if (codec.mimeType === "video/VP8") {
                                 options.encodings = [
-                                    {
-                                        rid: "r0",
-                                        maxBitrate: 150_000,
-                                        scaleResolutionDownBy: 4,
-                                        scalabilityMode: "L1T3"
-                                    },
-                                    {
-                                        rid: "r1",
-                                        maxBitrate: 500_000,
-                                        scaleResolutionDownBy: 2,
-                                        scalabilityMode: "L1T3"
-                                    },
-                                    {
-                                        rid: "r2",
-                                        maxBitrate: 1_000_000,
-                                        scaleResolutionDownBy: 1,
-                                        scalabilityMode: "L1T3"
-                                    }
+                                    { rid: "r0", maxBitrate: 150_000, scaleResolutionDownBy: 4, scalabilityMode: "L1T3" },
+                                    { rid: "r1", maxBitrate: 500_000, scaleResolutionDownBy: 2, scalabilityMode: "L1T3" },
+                                    { rid: "r2", maxBitrate: 1_000_000, scaleResolutionDownBy: 1, scalabilityMode: "L1T3" }
                                 ]
+                            } else if (codec.mimeType === "video/VP9") {
+                                // VP9 SVC — single layer but MUST have maxBitrate or encoder goes unconstrained
+                                options.encodings = [{
+                                    scalabilityMode: "L1T3",
+                                    maxBitrate: codecOptions?.videoGoogleMaxBitrate ?? 1_500_000
+                                }]
+                            } else if (codec.mimeType === "video/AV1") {
+                                options.encodings = [{
+                                    scalabilityMode: "L1T3",  // keep it simple — L3T3 is largely unsupported by browsers
+                                    maxBitrate: codecOptions?.videoGoogleMaxBitrate ?? 1_500_000
+                                }]
                             }
                         }
 
