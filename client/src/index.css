@@ -1,299 +1,383 @@
 @import "tailwindcss";
 
+/* ============================================
+   1. CSS VARIABLES (Default: Dark Mode)
+   ============================================ */
+
+:root {
+  /* Backgrounds */
+  --bg-page: linear-gradient(135deg, #18181b, #27272a, #18181b);
+  --bg-surface: #3f3f46;
+  --bg-surface-hover: #52525b;
+  --bg-glass: rgba(0, 0, 0, 0.4);
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+  --bg-modal: rgba(24, 24, 27, 0.9);
+
+  /* Text */
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+
+  /* Borders */
+  --border-light: rgba(255, 255, 255, 0.1);
+  --border-medium: rgba(255, 255, 255, 0.2);
+
+  /* Accents */
+  --accent-blue: #3b82f6;
+  --accent-blue-hover: #2563eb;
+  --accent-purple: #a855f7;
+  --accent-red: #ef4444;
+  --accent-green: #22c55e;
+  --accent-yellow: #eab308;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+
+  /* Player overlay */
+  --player-bg: rgba(0, 0, 0, 0.4);
+  color-scheme: dark light;
+}
+
+/* ============================================
+   2. LIGHT MODE OVERRIDES
+   ============================================ */
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-page: linear-gradient(135deg, #f8fafc, #e2e8f0, #f1f5f9);
+    --bg-surface: #e2e8f0;
+    --bg-surface-hover: #cbd5e1;
+    --bg-glass: rgba(255, 255, 255, 0.4);
+    --bg-overlay: rgba(0, 0, 0, 0.3);
+    --bg-modal: rgba(255, 255, 255, 0.9);
+
+    --text-primary: #09090b;
+    --text-secondary: #3f3f46;
+
+    --border-light: rgba(0, 0, 0, 0.1);
+    --border-medium: rgba(0, 0, 0, 0.2);
+
+    --accent-blue: #2563eb;
+    --accent-blue-hover: #1d4ed8;
+    --accent-purple: #9333ea;
+    --accent-red: #dc2626;
+    --accent-green: #16a34a;
+    --accent-yellow: #ca8a04;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+
+    --player-bg: rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* ============================================
+   3. GLOBAL STYLES
+   ============================================ */
+
+* {
+  @apply transition-colors duration-200;
+}
+
+body {
+  @apply m-0 p-0;
+}
+
+:root {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1rem;
+  scroll-behavior: smooth;
+}
+
+/* ============================================
+   4. FOCUS STATES
+   ============================================ */
+
+*:focus-visible {
+  outline: none;
+  ring: 2px solid var(--accent-blue);
+  ring-offset: 2px;
+  ring-offset-color: var(--bg-surface);
+}
+
+/* ============================================
+   5. TYPOGRAPHY
+   ============================================ */
+
+h1 {
+  @apply text-4xl md:text-5xl font-bold;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* ============================================
+   6. BUTTONS & FORM ELEMENTS
+   ============================================ */
+
 button {
-  @apply border-2 border-blue-600 rounded-sm p-2 bg-blue-600 text-white cursor-pointer;
+  @apply relative overflow-hidden rounded-xl px-5 py-2.5 font-medium transition-all duration-200 border shadow-md hover:shadow-lg active:scale-95 cursor-pointer;
+  background-color: var(--accent-blue);
+  border-color: var(--border-light);
+  color: white;
+}
+
+button:hover {
+  background-color: var(--accent-blue-hover);
+}
+
+button::after {
+  content: '';
+  @apply absolute inset-0 rounded-xl opacity-0 transition-opacity duration-200;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+button:hover::after {
+  @apply opacity-100;
 }
 
 .btn-secondary {
-  @apply border-2 border-blue-600 rounded-sm p-2 bg-transparent text-white cursor-pointer;
+  background-color: transparent;
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.btn-secondary:hover {
+  background-color: color-mix(in srgb, var(--accent-blue) 10%, transparent);
 }
 
 input,
 select {
-  @apply border-2 border-blue-600 rounded-sm p-2 bg-blue-950 text-white outline-0;
+  @apply rounded-xl border px-4 py-2.5 backdrop-blur-sm transition-all duration-200;
+  background-color: color-mix(in srgb, var(--bg-surface) 50%, transparent);
+  border-color: var(--border-light);
+  color: var(--text-primary);
 }
 
-button:hover,
-input:hover,
 input:focus,
-select:hover,
 select:focus {
-  @apply shadow-2xl shadow-blue-600 border-blue-400;
+  border-color: var(--accent-blue);
+  outline: none;
+  ring: 1px solid var(--accent-blue);
+}
+
+input::placeholder,
+select::placeholder {
+  color: var(--text-secondary);
 }
 
 .btn-red {
-  @apply border-red-600 bg-red-800 hover:shadow-2xl hover:shadow-red-600 hover:border-red-400;
+  background-color: var(--accent-red);
 }
 
-:root {
-  @apply bg-zinc-900 text-white;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 1rem;
+.btn-red:hover {
+  background-color: color-mix(in srgb, var(--accent-red) 80%, black);
 }
+
+.btn-green {
+  background-color: var(--accent-green);
+}
+
+.btn-green:hover {
+  background-color: color-mix(in srgb, var(--accent-green) 80%, black);
+}
+
+input[type="range"] {
+  @apply h-1.5 rounded-full appearance-none cursor-pointer;
+  background-color: color-mix(in srgb, var(--border-medium) 50%, transparent);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply w-4 h-4 rounded-full appearance-none;
+  background-color: var(--accent-blue);
+}
+
+input[type="range"]::-moz-range-thumb {
+  @apply w-4 h-4 rounded-full border-0;
+  background-color: var(--accent-blue);
+}
+
+/* ============================================
+   7. LAYOUT & PAGE CONTAINERS
+   ============================================ */
 
 .page {
-  @apply w-full top-0 left-0 fixed flex overflow-auto;
+  @apply fixed inset-0 flex overflow-auto;
   height: 100dvh;
 }
 
 .joinPreview {
-  width: 400px;
-  height: 300px;
-}
-
-h1 {
-  font-size: 3rem;
+  @apply w-[400px] h-[300px] rounded-2xl shadow-2xl object-cover;
 }
 
 .form-group {
-  @apply flex flex-col;
-}
-
-.participant {
-  @apply w-full sm:w-1/2 lg:w-1/3 bg-gray-900 h-1/2 lg:h-1/3 relative border-2 border-gray-800 transition-all;
-}
-
-.player {
-  @apply relative overflow-hidden;
-}
-
-.player video {
-  @apply absolute;
-  @apply bg-transparent;
-  top: 50%;
-  left: 50%;
-  max-width: 100%;
-  max-height: 100%;
-  transform: translate(-50%, -50%);
-}
-
-.player-bg {
-  filter: blur(32px);
-  object-fit: cover !important;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.participant .player {
-  @apply w-full h-full;
-}
-
-.participant video {
-  @apply w-full h-full;
-}
-
-.name {
-  @apply absolute bottom-2 left-2 p-2 border-2 border-gray-400 rounded-full backdrop-blur-2xl bg-black/20;
-}
-
-.view {
-  @apply absolute top-2 left-2 p-2 border-2 border-gray-400 rounded-full backdrop-blur-2xl bg-black/20 cursor-pointer hover:bg-white/20;
-}
-
-.options {
-  @apply absolute bottom-2 right-2 p-2 border-2 border-gray-400 rounded-full backdrop-blur-2xl bg-black/20 cursor-pointer hover:bg-white/20;
-}
-
-.streams-container {
-  @apply flex flex-row w-full h-full flex-wrap transition-all fixed top-0 left-0;
-  padding-bottom: 5.5rem;
-  padding-top: 4.5rem;
-  overflow-y: auto;
-}
-
-.dock {
-  @apply flex flex-row gap-4;
-  position: fixed;
-  bottom: 0px;
-  left: 50%;
-  transform: translate(-50%, 0%);
-  width: auto;
-  height: 5rem;
-  padding: 1rem;
-  backdrop-filter: blur(4px);
-  transition: 300ms;
-}
-
-.dock-hidden {
-  bottom: -7rem;
-}
-
-.dock button {
-  @apply rounded-full;
-}
-
-.screenviewer {
-  @apply fixed top-0 left-0 w-full h-full bg-black z-10;
-}
-
-.screenviewer .player {
-  @apply w-full h-full;
-}
-
-.screenviewer .player video {
-  object-fit: contain;
-  @apply w-full;
-}
-
-.loader {
-  @apply bg-gray-800;
-  position: relative;
-  width: 300px;
-  height: 0.5rem;
-  /* Slightly thinner for a modern look */
-  overflow: hidden;
-  /* Ensures the bar doesn't spill out */
-  border-radius: 9999px;
-}
-
-@keyframes loader-anim {
-  0% {
-    transform: translateX(-100%) scaleX(0.1);
-  }
-
-  50% {
-    transform: translateX(0%) scaleX(0.4);
-  }
-
-  100% {
-    transform: translateX(100%) scaleX(0.1);
-  }
-}
-
-.loader::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  /* Base width is full, then scaled via transform */
-  background-color: rgb(0, 136, 255);
-  animation: loader-anim 1.5s ease-in-out infinite;
-  border-radius: 9999px;
-}
-
-.screenoptions {
-  @apply fixed top-0 left-0 w-full h-full bg-gray-950;
-}
-
-.options-container {
-  @apply absolute bg-gray-800 flex flex-col gap-3 p-8 rounded-2xl;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  @apply flex flex-col gap-1.5;
 }
 
 .header {
-  @apply fixed top-0 left-0 w-full p-2 bg-gray-800/50 z-10;
-  @apply flex flex-row align-middle gap-4 backdrop-blur-md;
+  @apply fixed top-0 left-0 w-full px-6 py-3 z-10 flex items-center gap-4 backdrop-blur-xl border-b;
+  background-color: var(--bg-glass);
+  border-color: var(--border-light);
   height: 4rem;
 }
 
 .header span {
-  @apply my-auto;
-  @apply flex flex-row align-middle gap-1;
+  @apply flex items-center gap-1.5 text-sm font-medium;
 }
 
-.btn-green {
-  @apply bg-green-800 border-green-700;
+/* ============================================
+   8. MEDIA PLAYER
+   ============================================ */
+
+.player {
+  @apply relative overflow-hidden rounded-2xl;
+  background-color: var(--player-bg);
 }
 
-.btn-green:hover {
-  @apply shadow-green-400 border-green-600;
+.player video {
+  @apply absolute top-1/2 left-1/2 max-w-full max-h-full object-contain;
+  transform: translate(-50%, -50%);
 }
 
-.immersive-view {
-  @apply flex flex-row w-full flex-wrap transition-all fixed left-0;
-  top: 4.5rem;
-  height: calc(100% - 4.5rem);
-  overflow-y: auto;
+.player-bg {
+  @apply absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60 z-0;
 }
 
-.participants-bar {
-  position: absolute;
-  bottom: 5rem;
-  left: 0px;
-  width: 100%;
-  height: 20%;
-  overflow-x: hidden;
-  transition: 300ms;
-  @apply flex flex-row flex-nowrap bg-zinc-800;
-}
-
-.participant-list {
-  @apply w-full h-full flex flex-row flex-nowrap absolute left-0 top-0 overflow-x-auto;
-}
-
-.participant-preview {
-  @apply w-1/2 lg:w-1/3 xl:w-1/4 bg-gray-900 h-full relative border-2 border-gray-800 transition-all;
-  flex-shrink: 0;
-}
-
+.participant .player,
 .participant-preview .player {
   @apply w-full h-full;
 }
 
+.participant video,
 .participant-preview video {
-  @apply w-full h-full;
+  @apply w-full h-full object-cover;
+}
+
+.screenviewer {
+  @apply fixed inset-0 z-20 backdrop-blur-md;
+  background-color: color-mix(in srgb, black 95%, transparent);
+}
+
+.screenviewer .player video {
+  @apply object-contain;
+}
+
+/* ============================================
+   9. PARTICIPANT BADGES
+   ============================================ */
+
+.name,
+.view,
+.options {
+  backdrop-filter: blur(8px);
+  background-color: color-mix(in srgb, black 40%, transparent);
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.name {
+  @apply absolute bottom-3 left-3 px-3 py-1.5 text-sm font-medium rounded-full;
+}
+
+.view {
+  @apply absolute top-3 left-3 p-2 rounded-full cursor-pointer transition-all;
+}
+
+.view:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.options {
+  @apply absolute bottom-3 right-3 p-2 rounded-full cursor-pointer transition-all;
+}
+
+.options:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================================
+   10. STREAM GRID & DOCK
+   ============================================ */
+
+.streams-container {
+  @apply fixed inset-0 pt-20 pb-24 px-4 flex flex-wrap gap-4 overflow-y-auto;
+}
+
+.dock {
+  @apply fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-3 p-2 rounded-2xl backdrop-blur-xl border shadow-2xl transition-all duration-300;
+  background-color: var(--bg-glass);
+  border-color: var(--border-medium);
+}
+
+.dock-hidden {
+  @apply translate-y-24 opacity-0 pointer-events-none;
+}
+
+.dock button {
+  @apply rounded-full p-3;
+}
+
+/* ============================================
+   11. IMMERSIVE VIEW
+   ============================================ */
+
+.immersive-view {
+  @apply fixed left-0 top-16 w-full h-[calc(100%-4rem)] transition-all;
+}
+
+.participants-bar {
+  @apply absolute bottom-30 left-0 w-full h-32 flex flex-row flex-nowrap gap-2 px-4 overflow-x-auto transition-all;
+}
+
+/* Scrollbar styling */
+.participants-bar::-webkit-scrollbar {
+  @apply h-1;
+}
+
+.participants-bar::-webkit-scrollbar-track {
+  background-color: var(--border-light);
+  @apply rounded-full;
+}
+
+.participants-bar::-webkit-scrollbar-thumb {
+  background-color: var(--border-medium);
+  @apply rounded-full;
+}
+
+.participant-list {
+  @apply flex flex-row gap-3;
+}
+
+.participant-preview {
+  @apply w-48 h-full flex-shrink-0 relative rounded-2xl overflow-hidden border transition-all hover:scale-105 cursor-pointer;
+  background-color: var(--bg-surface);
+  border-color: var(--border-light);
+}
+
+.participant-preview:hover {
+  border-color: var(--accent-blue);
 }
 
 .participant-view {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  width: 100%;
-  height: calc(80% - 5rem);
-  transition: 300ms
-}
-
-.expand-btn {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  z-index: 10;
-  padding: 0.5rem;
-  background-color: rgba(0, 0, 0, 0.6);
-  @apply rounded-full;
-  cursor: pointer;
-}
-
-.participant-options {
-  position: fixed;
-  top: 0px;
-  left: 0px;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-  z-index: 100;
-}
-
-.settings-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 70%;
-  transform: translate(-50%, -50%);
-  @apply bg-gray-800 rounded-2xl p-6;
-}
-
-.expanded-preview {
-  height: calc(100% - 5rem);
-  @apply flex-wrap;
-  align-content: flex-start;
-}
-
-.expanded-preview .participant-preview {
-  @apply h-1/4;
+  @apply absolute inset-0 w-full transition-all;
+  height: calc(100% - 16rem);
 }
 
 .participant-view .player {
   @apply w-full h-full;
 }
 
-.participant-view video {
-  @apply w-full h-full;
+.expanded-preview {
+  @apply h-[70%] bottom-0;
+}
+
+.expanded-preview .participant-preview {
+  @apply h-40 w-64;
 }
 
 .view-full {
@@ -301,120 +385,156 @@ h1 {
   height: 100% !important;
 }
 
+/* ============================================
+   12. UI CONTROLS
+   ============================================ */
+
+.expand-btn {
+  @apply absolute top-2 left-2 z-10 p-1.5 rounded-full backdrop-blur-md cursor-pointer transition-all;
+  background-color: color-mix(in srgb, black 50%, transparent);
+}
+
+.expand-btn:hover {
+  background-color: color-mix(in srgb, black 70%, transparent);
+}
+
 .audio-control {
-  position: absolute;
-  width: auto;
-  height: auto;
-  bottom: 0.2rem;
-  left: 0.2rem;
-  padding: 0.5rem;
-  z-index: 1;
-  @apply bg-gray-800/50;
+  @apply absolute bottom-4 left-4 p-2 rounded-xl backdrop-blur-md border;
+  background-color: var(--bg-glass);
+  border-color: var(--border-medium);
 }
 
 .fscreen-btn {
-  position: absolute;
-  bottom: 0px;
-  right: 0px;
+  @apply absolute bottom-4 right-4 p-2 rounded-full backdrop-blur-md transition-all;
+  background-color: var(--bg-glass);
 }
 
-input[type="range"] {
-  padding: 0px;
+.fscreen-btn:hover {
+  background-color: color-mix(in srgb, var(--bg-glass) 80%, white);
 }
 
-@media (min-width: 1000px) {
-  .dock {
-    width: 100%;
-    justify-content: center;
+/* ============================================
+   13. MODALS
+   ============================================ */
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
-}
 
-@media (max-height: 700px) {
-  .participant {
-    @apply h-1/2 sm:w-1/2;
-  }
-}
-
-@media (max-height: 400px) {
-  .participant {
-    @apply h-full;
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
-@media (max-width: 600px) {
-  .settings-modal {
-    width: 90% !important;
+.participant-options,
+.screenoptions {
+  @apply fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md;
+  background-color: var(--bg-overlay);
+}
+
+.settings-modal,
+.options-container {
+  background-color: var(--bg-modal);
+  backdrop-filter: blur(12px);
+  border-color: var(--border-light);
+  @apply rounded-2xl border shadow-2xl p-6;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.settings-modal {
+  @apply w-11/12 max-w-md;
+}
+
+.options-container {
+  @apply w-11/12 max-w-md flex flex-col gap-4;
+}
+
+/* ============================================
+   14. LOADER
+   ============================================ */
+
+.loader {
+  @apply relative w-64 h-1.5 overflow-hidden rounded-full;
+  background-color: var(--border-light);
+}
+
+@keyframes loader-sweep {
+  0% {
+    transform: translateX(-100%);
   }
 
-  .settings-modal h1 {
-    font-size: 2rem;
+  100% {
+    transform: translateX(100%);
   }
 }
 
-
-@media (min-width: 1000px) {
-  .participants-bar {
-    position: fixed;
-    top: 4rem !important;
-    right: 0px !important;
-    left: auto;
-    width: 30%;
-    height: calc(100% - 4rem);
-    overflow-x: hidden;
-    transition: 300ms;
-    @apply flex flex-row flex-nowrap bg-zinc-800;
-  }
-
-  .expand-btn {
-    transform: rotate(-90deg)
-  }
-
-  .participant-list {
-    @apply w-full h-full flex flex-col flex-nowrap absolute left-0 top-0 overflow-y-auto;
-    padding-bottom: 5rem;
-  }
-
-  .expanded-preview {
-    padding-top: 5rem;
-    width: 100%;
-    @apply flex-wrap flex-row;
-    align-content: center;
-    justify-content: center
-  }
-
-  .expanded-preview .participant-preview {
-    @apply h-1/3 w-1/3;
-  }
-
-  .participant-preview {
-    @apply h-1/3 w-full bg-gray-900 relative border-2 border-gray-800 transition-all;
-    flex-shrink: 0;
-  }
-
-  .participant-view {
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    width: 70%;
-    height: 100%;
-    transition: 300ms
-  }
-
-  .audio-control,
-  .fscreen-btn {
-    bottom: 5rem;
-  }
+.loader::after {
+  content: "";
+  @apply absolute inset-0 w-full;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+  animation: loader-sweep 1s ease-in-out infinite;
 }
+
+/* ============================================
+   15. WARNING TOOLTIP
+   ============================================ */
 
 .warn {
-  @apply bg-yellow-600 rounded-full w-auto p-1 overflow-hidden relative;
-  @apply flex flex-row;
+  @apply relative flex items-center gap-1 rounded-full px-3 py-1 cursor-help;
+  background-color: color-mix(in srgb, var(--accent-yellow) 20%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.warn-message {
+  @apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden whitespace-nowrap rounded-lg px-3 py-1.5 text-sm border;
+  background-color: var(--bg-modal);
+  border-color: var(--border-light);
+  color: var(--text-primary);
 }
 
 .warn:hover .warn-message {
   @apply block;
 }
 
-.warn-message {
-  @apply hidden;
+/* ============================================
+   16. RESPONSIVE (Desktop)
+   ============================================ */
+
+@media (min-width: 1024px) {
+  .participants-bar {
+    @apply fixed top-16 right-0 left-auto w-80 h-[calc(100%-4rem)] flex flex-col gap-3 p-4 overflow-y-auto;
+  }
+
+  .participant-list {
+    @apply flex flex-col gap-3;
+  }
+
+  .participant-preview {
+    @apply w-full h-32;
+  }
+
+  .participant-view {
+    @apply w-[calc(100%-20rem)] h-full;
+  }
+
+  .expand-btn {
+    @apply hidden;
+  }
+}
+
+@media (max-width: 640px) {
+  .dock {
+    @apply gap-2 p-1.5;
+  }
+
+  .dock button {
+    @apply p-2;
+  }
+
+  .participant-preview {
+    @apply w-32;
+  }
 }
