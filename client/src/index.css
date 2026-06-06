@@ -373,11 +373,12 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .expanded-preview {
-  @apply h-[70%] bottom-0;
+  @apply h-[70%] flex-wrap w-full;
 }
 
 .expanded-preview .participant-preview {
-  @apply h-40 w-64;
+  @apply h-40;
+  width: calc(50% - 1rem);
 }
 
 .view-full {
