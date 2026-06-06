@@ -240,7 +240,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .player video {
-  @apply absolute top-1/2 left-1/2 max-w-full max-h-full object-contain;
+  @apply absolute top-1/2 left-1/2 w-full h-full object-contain;
   transform: translate(-50%, -50%);
 }
 
