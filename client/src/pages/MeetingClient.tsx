@@ -11,6 +11,7 @@ import getCodecOption from "../utils/getCodecOption";
 import useWakeLock from "../hooks/useWakeLock";
 import ImmersiveClientView from "../components/ImmersiveClientView";
 import { DataContext } from "../providers/DataProvider";
+import { isSafari } from "../utils/browser";
 
 const MeetingClient = () => {
     const {
@@ -171,6 +172,11 @@ const MeetingClient = () => {
         }, 2000);
     }
 
+    useEffect(() => {
+        if (isSafari() && streamOptions.codec != "H264") {
+            streamOptions.setCodec("H264")
+        }
+    }, [streamOptions.codec])
 
     return (
         <div className="page flex flex-col">
@@ -213,9 +219,14 @@ const MeetingClient = () => {
                     <div className="form-group">
                         <label htmlFor="codec">Codec</label>
                         <select name="codec" id="codec" value={streamOptions.codec} onChange={(ev) => { streamOptions.setCodec(ev.target.value) }}>
-                            <option value="VP9">VP9</option>
-                            <option value="VP8">VP8</option>
-                            <option value="AV1">AV1 (best quality but may increase cpu usage drastically)</option>
+                            {isSafari() ? <>
+                                {/* Its safari, only use h264 */}
+                                <option value="H264">H264</option>
+                            </> : <>
+                                {/* Not safari, we can show these */}
+                                <option value="VP9">VP9</option>
+                                <option value="VP8">VP8</option>
+                                <option value="AV1">AV1 (best quality but may increase cpu usage drastically)</option></>}
                         </select>
                     </div>
 

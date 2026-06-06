@@ -86,6 +86,11 @@ const createSendTransport = (socket: Socket, device: Device, onCreateTransport: 
                                     scalabilityMode: "L1T3",  // keep it simple — L3T3 is largely unsupported by browsers
                                     maxBitrate: codecOptions?.videoGoogleMaxBitrate ?? 1_500_000
                                 }]
+                            } else if (codec.mimeType === "video/H264") {
+                                // H.264: single layer, no scalabilityMode (not supported by most browsers)
+                                options.encodings = [{
+                                    maxBitrate: codecOptions?.videoGoogleMaxBitrate ?? 1_500_000
+                                }];
                             }
                         }
 
