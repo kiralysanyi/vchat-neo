@@ -60,17 +60,36 @@ const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCod
             }
 
             break;
-        default:
-            console.log("Defaulted back to VP9");
+        case "H264":
             codec = {
-                preferredPayloadType: 99,
                 kind: 'video',
-                mimeType: 'video/VP9',
+                mimeType: 'video/H264',
+                clockRate: 90000,
+                preferredPayloadType: 102,
+                parameters: {
+                    'packetization-mode': 1,
+                    'profile-level-id': '42e01f',
+                    'level-asymmetry-allowed': 1,
+                },
+                rtcpFeedback: [
+                    { type: 'nack' },
+                    { type: 'nack', parameter: 'pli' },
+                    { type: 'ccm', parameter: 'fir' },
+                    { type: 'goog-remb' },
+                    { type: 'transport-cc' }
+                ]
+            };
+            break;
+        default:
+            console.log("Defaulted back to VP8");
+            codec = {
+                preferredPayloadType: 98,
+                kind: 'video',
+                mimeType: 'video/VP8',
                 clockRate: 90000,
                 parameters: {
-                    'profile-id': 0,
                     'scalabilityMode': 'L1T3'
-                },
+                }
             }
             break;
     }

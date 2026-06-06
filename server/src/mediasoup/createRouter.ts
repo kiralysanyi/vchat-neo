@@ -52,6 +52,23 @@ const createRouter = async (worker: Worker) => {
             ],
         },
         {
+            kind: 'video',
+            mimeType: 'video/H264',
+            clockRate: 90000,
+            parameters: {
+                'packetization-mode': 1,      // 1 = non-interleaved mode, most compatible
+                'profile-level-id': '42e01f', // Constrained Baseline Profile (good compatibility)
+                'level-asymmetry-allowed': 1,
+            },
+            rtcpFeedback: [
+                { type: 'nack' },
+                { type: 'nack', parameter: 'pli' },
+                { type: 'ccm', parameter: 'fir' },
+                { type: 'goog-remb' },
+                { type: 'transport-cc' }
+            ]
+        },
+        {
             kind: 'audio',
             mimeType: 'audio/opus',
             clockRate: 48000,
@@ -84,7 +101,7 @@ const createRouter = async (worker: Worker) => {
 
     const router = await worker.createRouter({ mediaCodecs });
 
-    router.on("listenererror", (err) => {
+    router.on("listenererror", (err: any) => {
         console.error("Router error: ", err)
     })
 

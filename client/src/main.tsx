@@ -30,5 +30,8 @@ const router = createBrowserRouter([
 ])
 
 createRoot(document.getElementById('root')!).render(
-  <RouterProvider router={router} />
+  <>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet"></link>
+    <RouterProvider router={router} />
+  </>
 )
