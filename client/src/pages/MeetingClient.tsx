@@ -173,8 +173,8 @@ const MeetingClient = () => {
     }
 
     useEffect(() => {
-        if (isSafari() && streamOptions.codec != "H264") {
-            streamOptions.setCodec("H264")
+        if (isSafari() && streamOptions.codec != "AUTO") {
+            streamOptions.setCodec("AUTO")
         }
     }, [streamOptions.codec])
 
@@ -220,10 +220,11 @@ const MeetingClient = () => {
                         <label htmlFor="codec">Codec</label>
                         <select name="codec" id="codec" value={streamOptions.codec} onChange={(ev) => { streamOptions.setCodec(ev.target.value) }}>
                             {isSafari() ? <>
-                                {/* Its safari, only use h264 */}
-                                <option value="H264">H264</option>
+                                {/* Its safari, let it use whatever it wants */}
+                                <option value="AUTO">AUTO</option>
                             </> : <>
                                 {/* Not safari, we can show these */}
+                                <option value="AUTO">AUTO</option>
                                 <option value="VP9">VP9</option>
                                 <option value="VP8">VP8</option>
                                 <option value="AV1">AV1 (best quality but may increase cpu usage drastically)</option></>}

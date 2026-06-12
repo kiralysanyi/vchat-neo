@@ -1,20 +1,19 @@
 import checkDevice from "./checkDevice"
 
 const getMicrophone = async (): Promise<MediaStream | null> => {
-    return new Promise((resolve) => {
-        navigator.mediaDevices.getUserMedia({
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 echoCancellation: true,
                 autoGainControl: true,
                 noiseSuppression: true
             }, video: false
-        }).then((stream) => {
-            resolve(stream)
-        }).catch(() => {
-            resolve(null)
-        })
-    })
-
+        });
+        return stream;
+    } catch (error) {
+        console.error("Error accessing microphone:", error);
+        return null;
+    }
 }
 
 const checkMicrophone = async () => {
