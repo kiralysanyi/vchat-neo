@@ -1,7 +1,7 @@
 import type { ProducerCodecOptions, RtpCodecCapability } from "mediasoup-client/types"
 
-const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCodecCapability, codecOptions: ProducerCodecOptions } => {
-    let codec: RtpCodecCapability;
+const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCodecCapability | undefined, codecOptions: ProducerCodecOptions } => {
+    let codec: RtpCodecCapability | undefined;
     let codecOptions: ProducerCodecOptions = {
         videoGoogleMaxBitrate: highQuality ? 8_000_000 : 1_500_000,
         videoGoogleMinBitrate: highQuality ? 1_000_000 : 300_000,
@@ -60,25 +60,8 @@ const getCodecOption = (codecName: string, highQuality = false): { codec: RtpCod
             }
 
             break;
-        case "H264":
-            codec = {
-                kind: 'video',
-                mimeType: 'video/H264',
-                clockRate: 90000,
-                preferredPayloadType: 102,
-                parameters: {
-                    'packetization-mode': 1,
-                    'profile-level-id': '42e01f',
-                    'level-asymmetry-allowed': 1,
-                },
-                rtcpFeedback: [
-                    { type: 'nack' },
-                    { type: 'nack', parameter: 'pli' },
-                    { type: 'ccm', parameter: 'fir' },
-                    { type: 'goog-remb' },
-                    { type: 'transport-cc' }
-                ]
-            };
+        case "AUTO":
+            codec = undefined
             break;
         default:
             console.log("Defaulted back to VP8");

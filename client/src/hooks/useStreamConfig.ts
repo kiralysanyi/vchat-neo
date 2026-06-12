@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { isSafari } from "../utils/browser";
 
 const useStreamConfig = () => {
     const [loaded, setLoaded] = useState(false)
     const [fps, setFps] = useState<number>(30);
-    const [codec, setCodec] = useState<"vp8" | "vp9" | "av1" | "h264" | string>("vp9");
+    const [codec, setCodec] = useState<"VP8" | "VP9" | "AV1" | "AUTO" | string>("AUTO");
     const [highBitrate, setHighBitrate] = useState(false)
 
     // load from localstorage
@@ -16,6 +17,10 @@ const useStreamConfig = () => {
         if (savedFps) setFps(parseInt(savedFps))
         if (savedCodec) { setCodec(savedCodec) }
         if (savedHighBitrate) { setHighBitrate(savedHighBitrate == "true") }
+
+        if (isSafari()) {
+            setCodec("auto")
+        }
 
         setLoaded(true)
     }, [])
