@@ -3,8 +3,8 @@ const getScreen = async (fps?: number): Promise<MediaStream | null> => {
         fps = 15
     }
     console.log("Capture with fps: ", fps)
-    return new Promise((resolve) => {
-        navigator.mediaDevices.getDisplayMedia({
+    try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
             audio: {
                 echoCancellation: false,
                 autoGainControl: false,
@@ -13,12 +13,12 @@ const getScreen = async (fps?: number): Promise<MediaStream | null> => {
             }, video: {
                 frameRate: fps
             }
-        }).then((stream) => {
-            resolve(stream)
-        }).catch(() => {
-            resolve(null)
-        })
-    })
+        });
+        return stream;
+    } catch (error) {
+        console.error("Error capturing screen:", error);
+        return null;
+    }
 }
 
 const checkScreenSupport = () => {
@@ -29,4 +29,4 @@ const checkScreenSupport = () => {
     }
 }
 
-export {getScreen, checkScreenSupport};
+export { getScreen, checkScreenSupport };
