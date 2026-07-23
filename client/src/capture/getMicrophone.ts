@@ -1,12 +1,19 @@
 import checkDevice from "./checkDevice"
 
 const getMicrophone = async (): Promise<MediaStream | null> => {
+    const saved = localStorage.getItem("sad");
+    if (saved == null || saved == "null") {
+        throw new Error("No device config found!")
+    }
+    const deviceId = JSON.parse(saved).deviceId;
+
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 echoCancellation: true,
                 autoGainControl: true,
-                noiseSuppression: true
+                noiseSuppression: true,
+                deviceId: { exact: deviceId }
             }, video: false
         });
         return stream;

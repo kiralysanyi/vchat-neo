@@ -4,6 +4,8 @@ import config from "../config";
 import { DataContext } from "../providers/DataProvider";
 import { checkCamera, getCamera } from "../capture/getCamera";
 import { checkMicrophone, getMicrophone } from "../capture/getMicrophone";
+import useDevices from "../hooks/useDevices";
+import AudioTest from "../components/AudioTest";
 
 const Join = () => {
     const [meetingInfo, setMeetingInfo] = useState<{ id: string, participants: Record<string, {}>, external: boolean } | null>(null)
@@ -33,6 +35,14 @@ const Join = () => {
     const [error, setError] = useState<string>()
     const [serverPass, setServerPass] = useState("");
     const [authNeeded, setAuthNeeded] = useState(false);
+
+    const { audioDevices,
+        videoDevices,
+        selectedAudioDevice,
+        selectedVideoDevice,
+        setSelectedAudioDevice,
+        setSelectedVideoDevice
+    } = useDevices();
 
     useEffect(() => {
         const savedNickname = localStorage.getItem("nickname");
@@ -160,6 +170,46 @@ const Join = () => {
         }
     }
 
+    const cycleStreams = async () => {
+        setTimeout(() => {
+            if (microphoneStream) {
+                //disable
+                microphoneStream.getTracks().forEach(track => track.stop())
+                if (setMicrophoneStream) {
+                    setMicrophoneStream(null)
+                }
+
+                // enable
+                getMicrophone().then((stream) => {
+                    if (setMicrophoneStream) {
+                        setMicrophoneStream(stream)
+                    }
+                }).catch((error) => {
+                    console.error(error)
+                })
+            }
+
+            if (cameraStream) {
+                //disable
+                cameraStream.getTracks().forEach(track => track.stop())
+                if (setCameraStream) {
+                    setCameraStream(null)
+                }
+                // enable
+                getCamera().then((stream) => {
+                    if (setCameraStream) {
+                        setCameraStream(stream)
+                        if (videoRef.current) {
+                            videoRef.current.srcObject = stream;
+                        }
+                    }
+                }).catch((error) => {
+                    console.error(error)
+                })
+            }
+        }, 200);
+    }
+
     // password manager workaround, we dont want that garbage here
     const [inpType, setInpType] = useState("text")
 
@@ -209,6 +259,21 @@ const Join = () => {
                 <div className="flex flex-row gap-4">
                     {hasVideo && <button onClick={toggleCamera}>{cameraStream ? "Disable Camera" : "Enable camera"}</button>}
                     {hasAudio && <button onClick={toggleMicrophone}>{microphoneStream ? "Disable Microphone" : "Enable Microphone"}</button>}
+                </div>
+                <div className="flex flex-col gap-4">
+                    {hasVideo && <div className="form-group">
+                        <label htmlFor="camera-input">Camera device</label>
+                        <select name="camera-input" id="camera-input" value={selectedVideoDevice ? selectedVideoDevice.deviceId : ""} onChange={(e) => { setSelectedVideoDevice(videoDevices.filter(d => d.deviceId == e.target.value)[0]); cycleStreams() }}>
+                            {videoDevices.map(dev => <option value={dev.deviceId}>{dev.label}</option>)}
+                        </select>
+                    </div>}
+                    {hasAudio && <div className="form-group">
+                        <label htmlFor="microphone-input">Microphone device (turn on audio for test)</label>
+                        <select name="microphone-input" id="microphone-input" value={selectedAudioDevice ? selectedAudioDevice.deviceId : ""} onChange={(e) => { setSelectedAudioDevice(audioDevices.filter(d => d.deviceId == e.target.value)[0]); cycleStreams() }}>
+                            {audioDevices.map(dev => <option value={dev.deviceId}>{dev.label}</option>)}
+                        </select>
+                        {microphoneStream ? <AudioTest stream={microphoneStream}></AudioTest> : ""}
+                    </div>}
                 </div>
                 <div className="form-group">
                     <label htmlFor="nickname">Nickname</label>
