@@ -264,12 +264,14 @@ const Join = () => {
                     {hasVideo && <div className="form-group">
                         <label htmlFor="camera-input">Camera device</label>
                         <select name="camera-input" id="camera-input" value={selectedVideoDevice ? selectedVideoDevice.deviceId : ""} onChange={(e) => { setSelectedVideoDevice(videoDevices.filter(d => d.deviceId == e.target.value)[0]); cycleStreams() }}>
+                            <option value={videoDevices[0].deviceId}>Default</option>
                             {videoDevices.map(dev => <option value={dev.deviceId}>{dev.label}</option>)}
                         </select>
                     </div>}
                     {hasAudio && <div className="form-group">
                         <label htmlFor="microphone-input">Microphone device (turn on audio for test)</label>
                         <select name="microphone-input" id="microphone-input" value={selectedAudioDevice ? selectedAudioDevice.deviceId : ""} onChange={(e) => { setSelectedAudioDevice(audioDevices.filter(d => d.deviceId == e.target.value)[0]); cycleStreams() }}>
+                            <option value={audioDevices[0].deviceId}>Default</option>
                             {audioDevices.map(dev => <option value={dev.deviceId}>{dev.label}</option>)}
                         </select>
                         {microphoneStream ? <AudioTest stream={microphoneStream}></AudioTest> : ""}
