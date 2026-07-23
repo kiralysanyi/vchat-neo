@@ -9,6 +9,13 @@ const useDevices = () => {
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
+        // initial permission request
+        navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then((stream) => {
+            stream.getTracks().forEach(t => t.stop())
+        })
+    }, [])
+
+    useEffect(() => {
         if (loaded) {
             localStorage.setItem("sad", JSON.stringify(selectedAudioDevice));
             localStorage.setItem("svd", JSON.stringify(selectedVideoDevice));

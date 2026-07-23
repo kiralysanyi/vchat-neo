@@ -13,7 +13,7 @@ const getMicrophone = async (): Promise<MediaStream | null> => {
                 echoCancellation: true,
                 autoGainControl: true,
                 noiseSuppression: true,
-                deviceId
+                deviceId: { exact: deviceId }
             }, video: false
         });
         return stream;
