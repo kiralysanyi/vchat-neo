@@ -3,7 +3,7 @@ import express from "express";
 import http from "http"
 import { Server } from "socket.io";
 import createRouter from "./mediasoup/createRouter";
-import { CLEANUP_INTERVAL, ENABLE_API, PORT, SERVERPASS } from "./config";
+import { CLEANUP_INTERVAL, ENABLE_API, PORT, SERVERPASS, ZITADEL_CLIENT_ID, ZITADEL_DOMAIN } from "./config";
 import { ExtendedSocket } from "./types/ExtendedSocket";
 import cors from "cors";
 import { Meeting } from "./types/Meeting";
@@ -11,6 +11,7 @@ import * as fs from "fs";
 import roomHandler from "./mediasoup/roomHandler";
 import createWorkers from "./mediasoup/createWorkers";
 import createApiHandler from "./api_external/router";
+import { authRouter } from "./authHandler";
 
 const app = express();
 const server = http.createServer(app);
@@ -37,6 +38,10 @@ const cleanMeeting = (mId: string) => {
 
 app.use(cors({ origin: "*" }))
 app.use(express.json())
+
+if (ZITADEL_CLIENT_ID != null && ZITADEL_DOMAIN != null) {
+    app.use("/api/auth", authRouter)
+}
 
 createWorkers().then(async (workers) => {
     io.on("connection", async (socket: ExtendedSocket) => {

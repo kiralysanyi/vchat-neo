@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import useOptionalAuth from "../hooks/useOptionalAuth";
 
 const Index = () => {
+    const auth = useOptionalAuth();
+
     const [id, setId] = useState("");
     const [inputsDisabled, setInputsDisabled] = useState(false)
     const navigate = useNavigate();
-    
+
     const [error, setError] = useState<string>()
 
     document.title = "VChat-Neo"
@@ -35,6 +38,7 @@ const Index = () => {
                 <input autoComplete="off" disabled={inputsDisabled} value={id} onChange={(ev) => { setId(ev.target.value) }} type="text" placeholder="ID" />
             </div>
             <button disabled={inputsDisabled} onClick={joinOrCreate}>Join/Create</button>
+            {(window as any).authenabled ? <button onClick={() => void auth?.removeUser()}>Log out</button> : ""}
         </div>
     </div>
 }
