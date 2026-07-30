@@ -5,7 +5,10 @@ const Callback = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        navigate("/")
+        const nav = sessionStorage.getItem("aftercb");
+        sessionStorage.removeItem("aftercb");
+        console.log("Navto:", nav)
+        navigate(nav ? nav : "/")
     }, [])
 
     return <>

@@ -1,8 +1,22 @@
-import type { PropsWithChildren } from "react";
+import { useEffect, type PropsWithChildren } from "react";
 import { useAuth } from "react-oidc-context";
+import socket from "../socket";
 
 const AuthWrapper = ({ children }: PropsWithChildren) => {
     const auth = useAuth();
+
+    useEffect(() => {
+        if (location.pathname == "/callback") {
+            return;
+        }
+        sessionStorage.setItem("aftercb", location.pathname)
+    }, [])
+
+    useEffect(() => {
+        if (auth.isAuthenticated) {
+            socket.emit("token", auth.user?.access_token)
+        }
+    }, [auth.isAuthenticated])
 
     switch (auth.activeNavigator) {
         case "signinSilent":

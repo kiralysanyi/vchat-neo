@@ -12,6 +12,7 @@ import roomHandler from "./mediasoup/roomHandler";
 import createWorkers from "./mediasoup/createWorkers";
 import createApiHandler from "./api_external/router";
 import { authRouter, checkJwt } from "./authHandler";
+import tokenVerifier from "./utils/tokenVerifier";
 const app = express();
 const server = http.createServer(app);
 
@@ -47,180 +48,211 @@ createWorkers().then(async (workers) => {
     io.on("connection", async (socket: ExtendedSocket) => {
         //meeting related stuff
 
-        socket.on("prepare", (mId: string, password?: string) => {
-            if (socket.joinState) {
-                if (socket.joinState != "idle") {
-                    console.error("Prepare declined because socket is already in state: ", socket.joinState)
-                    return
+        const mainSockHandler = () => {
+            socket.on("prepare", (mId: string, password?: string) => {
+                if (socket.joinState) {
+                    if (socket.joinState != "idle") {
+                        console.error("Prepare declined because socket is already in state: ", socket.joinState)
+                        return
+                    }
                 }
-            }
 
-            socket.joinState = "preparing"
+                socket.joinState = "preparing"
 
 
-            if (!meetings[mId]) {
-                socket.joinState = "idle"
-                return;
-            }
-
-            if (socket.detachConsumer) {
-                console.log("Detaching consumer handler from", socket.id)
-                socket.detachConsumer();
-            }
-
-            if (socket.detachProducer) {
-                console.log("Detaching producer handler from", socket.id)
-                socket.detachProducer();
-            }
-
-            if (meetings[mId].password) {
-                if (!password) {
-                    socket.emit("auth_required")
+                if (!meetings[mId]) {
                     socket.joinState = "idle"
                     return;
                 }
 
-                if (meetings[mId].password != password) {
-                    socket.emit("wrong_pass")
-                    socket.joinState = "idle"
-                    return;
-                }
-            }
-
-            // room cleaning reset
-            clearTimeout(meetings[mId].timeout)
-            meetings[mId].timeout = setTimeout(() => {
-                cleanMeeting(mId)
-            }, (60 * 1000) * CLEANUP_INTERVAL)
-
-            const router = meetings[mId].router;
-
-            roomHandler(router, socket, meetings, mId);
-
-            // handle rtpcapabilities request
-            const onGetCapabilities = (_: any, cb: any) => {
-                console.log("GetCapabilities")
-                cb(router.rtpCapabilities)
-            }
-
-            socket.on("getCapabilities", onGetCapabilities);
-
-            socket.once("join", (meetingId: string, transportId: string, nickname) => {
-                if (meetings[meetingId] == undefined) {
-                    console.error("Meeting not found: ", meetingId)
-                    return;
+                if (socket.detachConsumer) {
+                    console.log("Detaching consumer handler from", socket.id)
+                    socket.detachConsumer();
                 }
 
-                if (meetings[meetingId].participants[transportId] != undefined) {
-                    console.error("Transport conflict, aborting join")
-                    if (socket.detachConsumer) {
-                        socket.detachConsumer()
+                if (socket.detachProducer) {
+                    console.log("Detaching producer handler from", socket.id)
+                    socket.detachProducer();
+                }
+
+                if (meetings[mId].password) {
+                    if (!password) {
+                        socket.emit("auth_required")
+                        socket.joinState = "idle"
+                        return;
                     }
 
-                    if (socket.detachProducer) {
-                        socket.detachProducer();
+                    if (meetings[mId].password != password) {
+                        socket.emit("wrong_pass")
+                        socket.joinState = "idle"
+                        return;
                     }
-                    return;
                 }
 
-                socket.meetid = meetingId;
+                // room cleaning reset
+                clearTimeout(meetings[mId].timeout)
+                meetings[mId].timeout = setTimeout(() => {
+                    cleanMeeting(mId)
+                }, (60 * 1000) * CLEANUP_INTERVAL)
 
-                socket.join(meetings[meetingId].id);
+                const router = meetings[mId].router;
 
-                socket.emit("participants", meetings[meetingId].participants)
+                roomHandler(router, socket, meetings, mId);
 
-                meetings[meetingId].participants[transportId] = {
-                    nickname: nickname,
-                    producerTransportId: transportId,
-                    audio: false,
-                    video: false,
-                    sAudio: false,
-                    sVideo: false
+                // handle rtpcapabilities request
+                const onGetCapabilities = (_: any, cb: any) => {
+                    console.log("GetCapabilities")
+                    cb(router.rtpCapabilities)
                 }
 
-                socket.to(meetings[meetingId].id).emit("newJoined", {
-                    nickname: nickname,
-                    producerTransportId: transportId
-                })
+                socket.on("getCapabilities", onGetCapabilities);
 
-                const onAddStream = (payloadId: number) => {
-                    switch (payloadId) {
-                        case 1:
-                            meetings[meetingId].participants[transportId].audio = true;
-                            break;
-
-                        case 2:
-                            meetings[meetingId].participants[transportId].video = true;
-                            break;
-
-                        case 3:
-                            meetings[meetingId].participants[transportId].sVideo = true;
-                            break;
-
-                        case 4:
-                            meetings[meetingId].participants[transportId].sAudio = true;
-                            break;
-
-                        default:
-                            break;
+                socket.once("join", (meetingId: string, transportId: string, nickname: string) => {
+                    if ((socket as any).nickname != undefined) {
+                        nickname = (socket as any).nickname;
                     }
-                    socket.to(meetings[meetingId].id).emit("newProducer", transportId, payloadId)
-                }
+                    if (meetings[meetingId] == undefined) {
+                        console.error("Meeting not found: ", meetingId)
+                        return;
+                    }
 
-                socket.on("addstream", onAddStream)
+                    if (meetings[meetingId].participants[transportId] != undefined) {
+                        console.error("Transport conflict, aborting join")
+                        if (socket.detachConsumer) {
+                            socket.detachConsumer()
+                        }
 
-                const onConsumeReady = () => {
-                    console.log("Consume ready")
-                    if (meetings[meetingId]) {
-                        for (let i in meetings[meetingId].participants) {
-                            meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);
-                            meetings[meetingId].participants[i].video && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 2);
-                            meetings[meetingId].participants[i].sVideo && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 3);
-                            meetings[meetingId].participants[i].sAudio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 4);
+                        if (socket.detachProducer) {
+                            socket.detachProducer();
+                        }
+                        return;
+                    }
+
+                    socket.meetid = meetingId;
+
+                    socket.join(meetings[meetingId].id);
+
+                    socket.emit("participants", meetings[meetingId].participants)
+
+                    meetings[meetingId].participants[transportId] = {
+                        nickname: nickname,
+                        producerTransportId: transportId,
+                        audio: false,
+                        video: false,
+                        sAudio: false,
+                        sVideo: false
+                    }
+
+                    socket.to(meetings[meetingId].id).emit("newJoined", {
+                        nickname: nickname,
+                        producerTransportId: transportId
+                    })
+
+                    const onAddStream = (payloadId: number) => {
+                        switch (payloadId) {
+                            case 1:
+                                meetings[meetingId].participants[transportId].audio = true;
+                                break;
+
+                            case 2:
+                                meetings[meetingId].participants[transportId].video = true;
+                                break;
+
+                            case 3:
+                                meetings[meetingId].participants[transportId].sVideo = true;
+                                break;
+
+                            case 4:
+                                meetings[meetingId].participants[transportId].sAudio = true;
+                                break;
+
+                            default:
+                                break;
+                        }
+                        socket.to(meetings[meetingId].id).emit("newProducer", transportId, payloadId)
+                    }
+
+                    socket.on("addstream", onAddStream)
+
+                    const onConsumeReady = () => {
+                        console.log("Consume ready")
+                        if (meetings[meetingId]) {
+                            for (let i in meetings[meetingId].participants) {
+                                meetings[meetingId].participants[i].audio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 1);
+                                meetings[meetingId].participants[i].video && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 2);
+                                meetings[meetingId].participants[i].sVideo && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 3);
+                                meetings[meetingId].participants[i].sAudio && socket.emit("newProducer", meetings[meetingId].participants[i].producerTransportId, 4);
+                            }
                         }
                     }
-                }
 
-                socket.on("consumeReady", onConsumeReady)
-                const onLeave = () => {
-                    socket.joinState = "idle";
-                    console.log("Socket left", socket.id, new Date().toISOString())
-                    console.log("==========================")
-                    // room cleaning reset
-                    clearTimeout(meetings[mId].timeout)
-                    meetings[mId].timeout = setTimeout(() => {
-                        cleanMeeting(mId)
-                    }, (60 * 1000) * CLEANUP_INTERVAL)
+                    socket.on("consumeReady", onConsumeReady)
+                    const onLeave = () => {
+                        socket.joinState = "idle";
+                        console.log("Socket left", socket.id, new Date().toISOString())
+                        console.log("==========================")
+                        // room cleaning reset
+                        clearTimeout(meetings[mId].timeout)
+                        meetings[mId].timeout = setTimeout(() => {
+                            cleanMeeting(mId)
+                        }, (60 * 1000) * CLEANUP_INTERVAL)
 
-                    socket.off("addstream", onAddStream)
-                    socket.off("consumeReady", onConsumeReady)
-                    socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
-                    socket.leave(meetingId)
-                    delete meetings[meetingId].participants[transportId];
-                    socket.off("disconnect", onLeave)
-                    socket.off("leave", onLeave)
+                        socket.off("addstream", onAddStream)
+                        socket.off("consumeReady", onConsumeReady)
+                        socket.to(meetings[meetingId].id).emit("participantLeft", transportId)
+                        socket.leave(meetingId)
+                        delete meetings[meetingId].participants[transportId];
+                        socket.off("disconnect", onLeave)
+                        socket.off("leave", onLeave)
 
-                    if (socket.detachConsumer) {
-                        console.log("Detaching consumer handler from", socket.id)
-                        socket.detachConsumer();
+                        if (socket.detachConsumer) {
+                            console.log("Detaching consumer handler from", socket.id)
+                            socket.detachConsumer();
+                        }
+
+                        if (socket.detachProducer) {
+                            console.log("Detaching producer handler from", socket.id)
+                            socket.detachProducer();
+                        }
                     }
 
-                    if (socket.detachProducer) {
-                        console.log("Detaching producer handler from", socket.id)
-                        socket.detachProducer();
-                    }
-                }
+                    socket.on("disconnect", onLeave)
+                    socket.on("leave", onLeave)
 
-                socket.on("disconnect", onLeave)
-                socket.on("leave", onLeave)
+                    console.log("Send initialized signal")
+                    socket.joinState = "joined"
+                    socket.emit("initialized")
+                })
 
-                console.log("Send initialized signal")
-                socket.joinState = "joined"
-                socket.emit("initialized")
+                socket.emit("serverReady");
             })
+        }
 
-            socket.emit("serverReady");
-        })
+        if (ZITADEL_CLIENT_ID && ZITADEL_DOMAIN) {
+            // auth enabled
+            socket.on("token", (token) => {
+                tokenVerifier(token).then(async (result) => {
+                    mainSockHandler();
+                    // attach username to socket
+                    const response = await fetch(`${ZITADEL_DOMAIN}/oidc/v1/userinfo`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    });
+
+                    const userProfile = await response.json();
+                    console.log(userProfile);
+                    socket.emit("nickname", userProfile.preferred_username);
+                    (socket as any).nickname = userProfile.preferred_username;
+                    socket.emit("auth_success")
+                }).catch((err) => {
+                    socket.emit("auth_error");
+                    console.error("Auth error: ", err);
+                })
+            })
+        } else {
+            mainSockHandler();
+        }
 
 
 

@@ -171,6 +171,11 @@ select::placeholder {
   color: var(--text-secondary);
 }
 
+input:disabled {
+  filter: contrast(0.3);
+  cursor: not-allowed;
+}
+
 .btn-red {
   background-color: var(--accent-red);
 }

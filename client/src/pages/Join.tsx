@@ -283,7 +283,7 @@ const Join = () => {
                 </div>
                 <div className="form-group">
                     <label htmlFor="nickname">Nickname</label>
-                    <input type="text" name="nickname" id="nickname" autoComplete="off" value={newNickname} onChange={(ev) => { setNewNickname(ev.target.value) }} />
+                    <input disabled={auth ? true : false} type="text" name="nickname" id="nickname" autoComplete="off" value={newNickname} onChange={(ev) => { setNewNickname(ev.target.value) }} />
                 </div>
                 {newMeet && <div className="form-group">
                     <label htmlFor="password">Set password (leave empty for none)</label>
