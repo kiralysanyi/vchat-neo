@@ -1,5 +1,9 @@
-import express from "express"
+import express, { RequestHandler } from "express"
 import { ZITADEL_CLIENT_ID, ZITADEL_DOMAIN } from "./config";
+import { expressjwt, GetVerificationKey } from "express-jwt";
+import JwksRsa from "jwks-rsa";
+import https from "https"
+import isDev from "./utils/isDev";
 
 const authRouter = express.Router();
 
@@ -15,4 +19,22 @@ authRouter.get("/config", (req, res) => {
     })
 })
 
-export { authRouter }
+const checkJwt = expressjwt({
+    secret: JwksRsa.expressJwtSecret({
+        cache: true,
+        rateLimit: true,
+        jwksRequestsPerMinute: 5,
+        jwksUri: `${ZITADEL_DOMAIN}/oauth/v2/keys`,
+        requestAgent: new https.Agent({
+            rejectUnauthorized: !isDev()
+        })
+    }) as GetVerificationKey,
+
+    // Validate the audience and issuer
+    audience: ZITADEL_CLIENT_ID ? ZITADEL_CLIENT_ID : "", // Or your ZITADEL Project ID
+    issuer: ZITADEL_DOMAIN ? ZITADEL_DOMAIN : "",
+    algorithms: ['RS256']
+});
+
+
+export { authRouter, checkJwt }

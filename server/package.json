@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start-dev": "ts-node src/main.ts",
+    "start-dev": "ts-node src/main.ts --dev",
     "start-prod": "node .",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -23,6 +23,8 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-jwt": "^8.5.1",
+    "jwks-rsa": "^4.1.0",
     "mediasoup": "^3.19.22",
     "socket.io": "^4.8.3"
   }

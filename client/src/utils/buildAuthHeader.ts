@@ -8,8 +8,8 @@ const buildAuthHeader = (auth: AuthContextProps | undefined | null): string => {
     if (!auth.user) {
         return "";
     }
-
-    return `Bearer ${auth.user.access_token}`
+    const header = `Bearer ${auth.user.access_token}`;
+    return header
 }
 
 export default buildAuthHeader;

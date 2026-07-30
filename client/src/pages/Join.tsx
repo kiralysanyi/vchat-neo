@@ -251,7 +251,7 @@ const Join = () => {
                 setError("Failed to launch client automatically")
             }
         }
-    }, [meetingInfo])
+    }, [meetingInfo, queryParams])
 
 
     return <div className="page">

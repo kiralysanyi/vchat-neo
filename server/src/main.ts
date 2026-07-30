@@ -11,8 +11,7 @@ import * as fs from "fs";
 import roomHandler from "./mediasoup/roomHandler";
 import createWorkers from "./mediasoup/createWorkers";
 import createApiHandler from "./api_external/router";
-import { authRouter } from "./authHandler";
-
+import { authRouter, checkJwt } from "./authHandler";
 const app = express();
 const server = http.createServer(app);
 
@@ -41,6 +40,7 @@ app.use(express.json())
 
 if (ZITADEL_CLIENT_ID != null && ZITADEL_DOMAIN != null) {
     app.use("/api/auth", authRouter)
+    app.use("/api", checkJwt)
 }
 
 createWorkers().then(async (workers) => {

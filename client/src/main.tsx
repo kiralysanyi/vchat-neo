@@ -52,6 +52,7 @@ getAuthConfig().then((config) => {
       authority: config.zitadel_domain,
       client_id: config.zitadel_client_id,
       redirect_uri: `${location.origin}/callback`,
+      scope: "openid profile email offline_access"
     }
 
     console.log("App configured with auth enabled!")
