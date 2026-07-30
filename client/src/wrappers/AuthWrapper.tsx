@@ -41,7 +41,14 @@ const AuthWrapper = ({ children }: PropsWithChildren) => {
         // </div>
     }
 
-    return <button onClick={() => void auth.signinRedirect()}>Log in</button>;
+    return <div className="page">
+        <div className="mx-auto my-auto flex flex-col gap-8 p-4">
+            <h1>Auth required</h1>
+            <p>This server uses authentication. Please sign in or register a new account!</p>
+            <p>Auth server: <b>{new URL(auth.settings.authority).hostname}</b></p>
+            <button onClick={() => void auth.signinRedirect()}>Log in / Register</button>
+        </div>
+    </div>
 }
 
 export default AuthWrapper;
