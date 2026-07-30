@@ -38,7 +38,19 @@ services:
       - WORKERS=2 # count of worker threads, should not be bigger then cpu core/thread count
       - SERVERPASS=valami # if you set this then this password will be asked before creating a new meeting
       - CLEANUP_INTERVAL=30 # basically the time of keeping rooms alive without participants (minutes, default: 60)
+      - ZITADEL_DOMAIN=https://sso.centralserver.lan #zitadel url/domain (optional)
+      - ZITADEL_CLIENT_ID=384097234960056329 # zitadel client id (optional)
 ```
+
+## Authentication
+
+If you want to use authentication you can connect the app to a zitadel server. If zitadel related environment variables are omitted then the app disables auth functionality. Keep in mind that this app only supports jwt tokens.
+
+Recommended zitadel config:
+- Application type: useragent
+- Response types: Code
+- Refresh token: true
+- Auth token type: jwt
 
 ## Notes
 
