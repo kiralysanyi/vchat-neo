@@ -10,6 +10,8 @@ import { DataContext } from "../providers/DataProvider";
 import socket from "../socket";
 import type { Participant } from "../types/Participant";
 import getCodecOption from "../utils/getCodecOption";
+import buildAuthHeader from "../utils/buildAuthHeader";
+import useOptionalAuth from "./useOptionalAuth";
 
 const useClient = () => {
     const {
@@ -50,6 +52,8 @@ const useClient = () => {
     const [authenticated, setAuthenticated] = useState(false);
 
     const [initialized, setInitialized] = useState(false);
+
+    const auth = useOptionalAuth();
 
     // handle auth
     const authenticate = () => {
@@ -116,10 +120,14 @@ const useClient = () => {
     // 1. Navigation Guard
     useEffect(() => {
         if (connected) {
-            fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json" } }).then(async (res) => {
+            fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json", "Authorization": buildAuthHeader(auth) } }).then(async (res) => {
+                if (res.status == 401) {
+                    console.error("Unauthorized");
+                    navigate("/");
+                }
                 if (res.status != 200) {
                     console.error("Meeting does not exist")
-                    navigate("/")
+                    navigate("/");
                 }
             })
         }

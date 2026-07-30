@@ -6,6 +6,8 @@ import { checkCamera, getCamera } from "../capture/getCamera";
 import { checkMicrophone, getMicrophone } from "../capture/getMicrophone";
 import useDevices from "../hooks/useDevices";
 import AudioTest from "../components/AudioTest";
+import buildAuthHeader from "../utils/buildAuthHeader";
+import useOptionalAuth from "../hooks/useOptionalAuth";
 
 const Join = () => {
     const [meetingInfo, setMeetingInfo] = useState<{ id: string, participants: Record<string, {}>, external: boolean } | null>(null)
@@ -44,20 +46,22 @@ const Join = () => {
         setSelectedVideoDevice
     } = useDevices();
 
+    const auth = useOptionalAuth();
+
     useEffect(() => {
         const savedNickname = localStorage.getItem("nickname");
         if (savedNickname) {
             setNewNickname(savedNickname)
         }
 
-        fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json" } }).then(async (res) => {
+        fetch(config.serverUrl + "/api/meeting/" + params.id, { method: "GET", headers: { "Content-Type": "application/json", "Authorization": buildAuthHeader(auth) } }).then(async (res) => {
             if (res.status == 200) {
                 const info = await res.json();
                 setMeetingInfo(info)
             } else {
                 setNewMeet(true);
                 // check if auth needed
-                fetch(config.serverUrl + "/api/needsauth", { method: "GET", headers: { "Content-type": "application/json" } }).then(async (res) => {
+                fetch(config.serverUrl + "/api/needsauth", { method: "GET", headers: { "Content-type": "application/json", "Authorization": buildAuthHeader(auth) } }).then(async (res) => {
                     let data = await res.json()
                     if (data.required == true) {
                         setAuthNeeded(true)
@@ -94,7 +98,7 @@ const Join = () => {
 
             fetch(config.serverUrl + "/api/meeting/" + params.id, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "Authorization": buildAuthHeader(auth) },
                 body: JSON.stringify(body)
             }).then(async (res) => {
                 const data = await res.json();
@@ -279,7 +283,7 @@ const Join = () => {
                 </div>
                 <div className="form-group">
                     <label htmlFor="nickname">Nickname</label>
-                    <input type="text" name="nickname" id="nickname" autoComplete="off" value={newNickname} onChange={(ev) => { setNewNickname(ev.target.value) }} />
+                    <input disabled={auth ? true : false} type="text" name="nickname" id="nickname" autoComplete="off" value={newNickname} onChange={(ev) => { setNewNickname(ev.target.value) }} />
                 </div>
                 {newMeet && <div className="form-group">
                     <label htmlFor="password">Set password (leave empty for none)</label>
