@@ -17,10 +17,12 @@ const useDevices = () => {
 
     useEffect(() => {
         if (loaded) {
+            console.log("Saving device config")
             localStorage.setItem("sad", JSON.stringify(selectedAudioDevice));
             localStorage.setItem("svd", JSON.stringify(selectedVideoDevice));
             return;
         }
+        console.log("Loading device config")
 
         const savedAudioDev = localStorage.getItem("sad");
         const savedVideoDev = localStorage.getItem("svd");
@@ -48,31 +50,33 @@ const useDevices = () => {
         setLoaded(true);
     }, [loaded, selectedAudioDevice, selectedVideoDevice])
 
-    navigator.mediaDevices.enumerateDevices().then((devinfo) => {
-        const audioArray: MediaDeviceInfo[] = [];
-        const videoArray: MediaDeviceInfo[] = [];
-        for (let i in devinfo) {
-            let dev = devinfo[i];
-            if (dev.kind == "audioinput") {
-                audioArray.push(dev);
+    useEffect(() => {
+        navigator.mediaDevices.enumerateDevices().then((devinfo) => {
+            const audioArray: MediaDeviceInfo[] = [];
+            const videoArray: MediaDeviceInfo[] = [];
+            for (let i in devinfo) {
+                let dev = devinfo[i];
+                if (dev.kind == "audioinput") {
+                    audioArray.push(dev);
+                }
+
+                if (dev.kind == "videoinput") {
+                    videoArray.push(dev)
+                }
             }
 
-            if (dev.kind == "videoinput") {
-                videoArray.push(dev)
+            setVideoDevices(videoArray);
+            setAudioDevices(audioArray);
+
+            if (selectedAudioDevice == null && audioArray.length > 0 && loaded) {
+                setSelectedAudioDevice(audioArray[0])
             }
-        }
 
-        setVideoDevices(videoArray);
-        setAudioDevices(audioArray);
-
-        if (selectedAudioDevice == null && audioArray.length > 0 && loaded) {
-            setSelectedAudioDevice(audioArray[0])
-        }
-
-        if (selectedVideoDevice == null && videoArray.length > 0 && loaded) {
-            setSelectedVideoDevice(videoArray[0])
-        }
-    })
+            if (selectedVideoDevice == null && videoArray.length > 0 && loaded) {
+                setSelectedVideoDevice(videoArray[0])
+            }
+        })
+    }, [])
 
     return { videoDevices, audioDevices, selectedAudioDevice, selectedVideoDevice, setSelectedAudioDevice, setSelectedVideoDevice }
 }
