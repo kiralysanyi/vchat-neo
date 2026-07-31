@@ -243,7 +243,6 @@ createWorkers().then(async (workers) => {
                     });
 
                     const userProfile = await response.json();
-                    console.log(userProfile);
                     socket.emit("nickname", userProfile.preferred_username);
                     (socket as any).nickname = userProfile.preferred_username;
                     socket.emit("auth_success")
