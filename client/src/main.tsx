@@ -9,6 +9,7 @@ import getAuthConfig from './utils/getAuthConfig'
 import { AuthProvider, type AuthProviderProps } from 'react-oidc-context'
 import AuthWrapper from './wrappers/AuthWrapper'
 import Callback from './pages/Callback'
+import { WebStorageStateStore } from 'oidc-client-ts'
 
 const routes: RouteObject[] = [
   {
@@ -53,7 +54,9 @@ getAuthConfig().then((config) => {
       authority: config.zitadel_domain,
       client_id: config.zitadel_client_id,
       redirect_uri: `${location.origin}/callback`,
-      scope: "openid profile email offline_access urn:zitadel:iam:org:project:roles"
+      scope: "openid profile email offline_access urn:zitadel:iam:org:projects:roles",
+      automaticSilentRenew: true,
+      userStore: new WebStorageStateStore({ store: window.localStorage }),
     }
 
     console.log("App configured with auth enabled!")
