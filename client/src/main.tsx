@@ -35,6 +35,7 @@ const routes: RouteObject[] = [
 
 
 getAuthConfig().then((config) => {
+  sessionStorage.setItem("authconfig", JSON.stringify(config))
   if (config == null) {
     // auth disabled
     const router = createBrowserRouter(routes)
@@ -52,7 +53,7 @@ getAuthConfig().then((config) => {
       authority: config.zitadel_domain,
       client_id: config.zitadel_client_id,
       redirect_uri: `${location.origin}/callback`,
-      scope: "openid profile email offline_access",
+      scope: "openid profile email offline_access urn:zitadel:iam:org:project:roles"
     }
 
     console.log("App configured with auth enabled!")

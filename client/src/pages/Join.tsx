@@ -7,7 +7,8 @@ import { checkMicrophone, getMicrophone } from "../capture/getMicrophone";
 import useDevices from "../hooks/useDevices";
 import AudioTest from "../components/AudioTest";
 import buildAuthHeader from "../utils/buildAuthHeader";
-import useOptionalAuth from "../hooks/useOptionalAuth";
+import useRoleManager from "../hooks/useRoleManager";
+import { useAuth } from "react-oidc-context";
 
 const Join = () => {
     const [meetingInfo, setMeetingInfo] = useState<{ id: string, participants: Record<string, {}>, external: boolean } | null>(null)
@@ -37,6 +38,7 @@ const Join = () => {
     const [error, setError] = useState<string>()
     const [serverPass, setServerPass] = useState("");
     const [authNeeded, setAuthNeeded] = useState(false);
+    const { canCreate } = useRoleManager();
 
     const { audioDevices,
         videoDevices,
@@ -46,7 +48,7 @@ const Join = () => {
         setSelectedVideoDevice
     } = useDevices();
 
-    const auth = useOptionalAuth();
+    const auth = useAuth();
 
     useEffect(() => {
         const savedNickname = localStorage.getItem("nickname");
@@ -252,6 +254,20 @@ const Join = () => {
             }
         }
     }, [meetingInfo, queryParams])
+
+    if (!canCreate && newMeet) {
+        return <div className="page">
+            <div className="mx-auto my-auto flex flex-col gap-4 max-w-[50%] sm:max-w-[90%]">
+                <h1>Meeting not found</h1>
+                <p>This meeting does not exist and you don't have permission to create new ones. <br />
+                    If you need permission to create meetings, contact your system administrator. <br />
+                    If you have permissions, try to log out and then log in. <br />
+                    Your username is: <b>{auth?.user?.profile.preferred_username}</b>
+                </p>
+                <button onClick={() => navigate("/")}>Go to main page</button>
+            </div>
+        </div>
+    }
 
 
     return <div className="page">
