@@ -8,12 +8,15 @@ const Callback = () => {
         const nav = sessionStorage.getItem("aftercb");
         sessionStorage.removeItem("aftercb");
         console.log("Navto:", nav)
-        navigate(nav ? nav : "/")
+        navigate(nav ? nav : "/", { viewTransition: true })
     }, [])
 
-    return <>
-        <h1>Processing...</h1>
-    </>
+    return <div className="page">
+        <div className="my-auto mx-auto flex flex-col">
+            <span>Processing</span>
+            <div className="loader"></div>
+        </div>
+    </div>
 }
 
 export default Callback;
