@@ -3,7 +3,7 @@ import express from "express";
 import http from "http"
 import { Server } from "socket.io";
 import createRouter from "./mediasoup/createRouter";
-import { CLEANUP_INTERVAL, ENABLE_API, PORT, SERVERPASS, ZITADEL_CLIENT_ID, ZITADEL_DOMAIN } from "./config";
+import { CLEANUP_INTERVAL, ENABLE_API, PORT, SERVERPASS, ZITADEL_CLIENT_ID, ZITADEL_DOMAIN, ZITADEL_USE_ROLES } from "./config";
 import { ExtendedSocket } from "./types/ExtendedSocket";
 import cors from "cors";
 import { Meeting } from "./types/Meeting";
@@ -11,7 +11,7 @@ import * as fs from "fs";
 import roomHandler from "./mediasoup/roomHandler";
 import createWorkers from "./mediasoup/createWorkers";
 import createApiHandler from "./api_external/router";
-import { authRouter, checkJwt } from "./authHandler";
+import { authRouter, checkJwt, role_createCheckMiddleware } from "./authHandler";
 import tokenVerifier from "./utils/tokenVerifier";
 const app = express();
 const server = http.createServer(app);
@@ -39,7 +39,9 @@ const cleanMeeting = (mId: string) => {
 app.use(cors({ origin: "*" }))
 app.use(express.json())
 
-if (ZITADEL_CLIENT_ID != null && ZITADEL_DOMAIN != null) {
+const ZITADEL_ENABLED = ZITADEL_CLIENT_ID != null && ZITADEL_DOMAIN != null
+
+if (ZITADEL_ENABLED) {
     app.use("/api/auth", authRouter)
     app.use("/api", checkJwt)
 }
@@ -274,10 +276,31 @@ createWorkers().then(async (workers) => {
         console.log("Connected socket")
     })
 
+    //get meeting info
+
+    app.get("/api/meeting/:id", (req, res) => {
+        const meeting = meetings[req.params.id];
+
+        if (meeting == undefined) {
+            return res.status(404).json({
+                error: "Not found"
+            })
+        }
+
+        return res.json({
+            id: meeting.id,
+            participants: meeting.participants,
+            external: meeting.external == true
+        })
+    })
+
     // todo: add actual load balancing
     let lastSelectedWorker = 0;
 
     // create meeting
+    if (ZITADEL_USE_ROLES == true && ZITADEL_ENABLED == true) {
+        app.use("/api/meeting/:id", role_createCheckMiddleware)
+    }
     app.post("/api/meeting/:id", async (req, res) => {
         const id = req.params.id;
         const password = req.body.password ? req.body.password : undefined;
@@ -343,25 +366,6 @@ createWorkers().then(async (workers) => {
         }
     })
 
-    //get meeting info
-
-    app.get("/api/meeting/:id", (req, res) => {
-        const meeting = meetings[req.params.id];
-
-        if (meeting == undefined) {
-            return res.status(404).json({
-                error: "Not found"
-            })
-        }
-
-        return res.json({
-            id: meeting.id,
-            participants: meeting.participants,
-            external: meeting.external == true
-        })
-    })
-
-    // handle non existent pages
 
     if (ENABLE_API == true) {
         app.use("/api/external", createApiHandler(meetings, workers, cleanMeeting));

@@ -40,6 +40,7 @@ services:
       - CLEANUP_INTERVAL=30 # basically the time of keeping rooms alive without participants (minutes, default: 60)
       - ZITADEL_DOMAIN=https://sso.centralserver.lan #zitadel url/domain (optional)
       - ZITADEL_CLIENT_ID=384097234960056329 # zitadel client id (optional)
+      - ZITADEL_USE_ROLES=true # use this instead of serverpass if you want to assign meeting creation permissions based on zitadel roles
 ```
 
 ## Authentication
@@ -51,6 +52,16 @@ Recommended zitadel config:
 - Response types: Code
 - Refresh token: true
 - Auth token type: jwt
+- Include user's profile info in the ID Token: true
+
+If you use roles:
+- "App/Add user roles to the access token": true
+- "App/User roles inside ID Token": true
+- "Project/Return user roles during authentication": true
+
+Roles (these are only needed if ZITADEL_USE_ROLES enabled):
+- login_default (Optional, the app never checks for it, only needed if you use "Only authorized users can authenticate" option in zitadel project)
+- meet_create (Mandatory, if a user doesn't have this role, the app wont let them create new meetings)
 
 ## Notes
 

@@ -15,3 +15,4 @@ services:
       - SERVERPASS=valami # if you set this then this password will be asked before creating a new meeting
       - ZITADEL_DOMAIN=https://sso.centralserver.lan #zitadel url/domain (optional)
       - ZITADEL_CLIENT_ID=384097234960056329 # zitadel client id (optional)
+      - ZITADEL_USE_ROLES=true # use this instead of serverpass if you want to assign meeting creation permissions based on zitadel roles

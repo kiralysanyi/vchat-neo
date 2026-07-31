@@ -19,7 +19,7 @@ function getZitadelPublicKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCall
     });
 }
 
-const tokenVerifier = (token: string): Promise<string | jwt.JwtPayload | undefined> => {
+const tokenVerifier = (token: string): Promise<jwt.JwtPayload | undefined> => {
     return new Promise((resolve, reject) => {
         jwt.verify(
             token,
@@ -36,7 +36,7 @@ const tokenVerifier = (token: string): Promise<string | jwt.JwtPayload | undefin
                 }
 
                 // Attach user payload (claims) to socket instance for downstream handlers
-                resolve(decoded)
+                resolve(decoded as jwt.JwtPayload)
             }
         );
     })
