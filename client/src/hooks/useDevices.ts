@@ -5,14 +5,38 @@ const useDevices = () => {
     const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
     const [selectedVideoDevice, setSelectedVideoDevice] = useState<MediaDeviceInfo | null>(null);
     const [selectedAudioDevice, setSelectedAudioDevice] = useState<MediaDeviceInfo | null>(null);
-
+    const [pastCheck, setPastCheck] = useState(false);
+    const [checkError, setCheckError] = useState<string>();
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
-        // initial permission request
-        navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then((stream) => {
-            stream.getTracks().forEach(t => t.stop())
-        })
+        (async () => {
+            let nocam = false;
+            let nomic = false;
+            // initial permission request
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+                stream.getTracks().forEach(t => t.stop());
+            } catch (error) {
+                console.error(error);
+                nocam = true;
+            }
+
+
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                stream.getTracks().forEach(t => t.stop());
+            } catch (error) {
+                console.error(error);
+                nomic = true;
+            }
+
+            if (nocam == true && nomic == true) {
+                setCheckError("No permission");
+            }
+
+            setPastCheck(true)
+        })()
     }, [])
 
     useEffect(() => {
@@ -33,7 +57,8 @@ const useDevices = () => {
                 setSelectedAudioDevice(i);
                 setLoaded(true);
             } catch (error) {
-                console.error("Invalid audio device info: ", error)
+                console.error("Invalid audio device info: ", error);
+                setCheckError("Invalid audio device info");
             }
         }
 
@@ -44,6 +69,7 @@ const useDevices = () => {
                 setLoaded(true);
             } catch (error) {
                 console.error("Invalid video device info: ", error)
+                setCheckError("Invalid video device info");
             }
         }
 
@@ -78,7 +104,7 @@ const useDevices = () => {
         })
     }, [])
 
-    return { videoDevices, audioDevices, selectedAudioDevice, selectedVideoDevice, setSelectedAudioDevice, setSelectedVideoDevice }
+    return { videoDevices, audioDevices, selectedAudioDevice, selectedVideoDevice, setSelectedAudioDevice, setSelectedVideoDevice, pastCheck, checkError }
 }
 
 export default useDevices
