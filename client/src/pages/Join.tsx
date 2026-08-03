@@ -45,12 +45,19 @@ const Join = () => {
         selectedAudioDevice,
         selectedVideoDevice,
         setSelectedAudioDevice,
-        setSelectedVideoDevice
+        setSelectedVideoDevice,
+        pastCheck,
+        checkError
     } = useDevices();
+
+    useEffect(() => setError(checkError), [checkError]);
 
     const auth = useAuth();
 
     useEffect(() => {
+        if (!pastCheck) {
+            return;
+        }
         const savedNickname = localStorage.getItem("nickname");
         if (savedNickname) {
             setNewNickname(savedNickname)
@@ -80,7 +87,7 @@ const Join = () => {
         checkMicrophone().then((has) => {
             setHasAudio(has)
         })
-    }, [])
+    }, [pastCheck])
 
     const join = () => {
         if (newNickname.length < 4) {
@@ -283,17 +290,17 @@ const Join = () => {
                 <div className="flex flex-col gap-4">
                     {hasVideo && <div className="form-group">
                         <label htmlFor="camera-input">Camera device</label>
-                        <select name="camera-input" id="camera-input" value={selectedVideoDevice ? selectedVideoDevice.deviceId : ""} onChange={(e) => { setSelectedVideoDevice(videoDevices.filter(d => d.deviceId == e.target.value)[0]); cycleStreams() }}>
+                        {pastCheck && <select name="camera-input" id="camera-input" value={selectedVideoDevice ? selectedVideoDevice.deviceId : ""} onChange={(e) => { setSelectedVideoDevice(videoDevices.filter(d => d.deviceId == e.target.value)[0]); cycleStreams() }}>
                             <option value={videoDevices[0].deviceId}>Default</option>
                             {videoDevices.map(dev => <option value={dev.deviceId}>{dev.label}</option>)}
-                        </select>
+                        </select>}
                     </div>}
                     {hasAudio && <div className="form-group">
                         <label htmlFor="microphone-input">Microphone device (turn on audio for test)</label>
-                        <select name="microphone-input" id="microphone-input" value={selectedAudioDevice ? selectedAudioDevice.deviceId : ""} onChange={(e) => { setSelectedAudioDevice(audioDevices.filter(d => d.deviceId == e.target.value)[0]); cycleStreams() }}>
+                        {pastCheck && <select name="microphone-input" id="microphone-input" value={selectedAudioDevice ? selectedAudioDevice.deviceId : ""} onChange={(e) => { setSelectedAudioDevice(audioDevices.filter(d => d.deviceId == e.target.value)[0]); cycleStreams() }}>
                             <option value={audioDevices[0].deviceId}>Default</option>
                             {audioDevices.map(dev => <option value={dev.deviceId}>{dev.label}</option>)}
-                        </select>
+                        </select>}
                         {microphoneStream ? <AudioTest stream={microphoneStream}></AudioTest> : ""}
                     </div>}
                 </div>
