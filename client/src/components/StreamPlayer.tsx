@@ -27,9 +27,9 @@ const StreamPlayer = ({ stream, volume }: { stream: MediaStream, volume?: number
     }, [volume, audioRef]);
 
     return <div className={`player ${type == "audio" && "hidden"}`}>
-        {type == "video" && <video className="player-bg" autoPlay muted ref={bgRef}></video>}
-        {type == "video" && <video autoPlay ref={videoRef}></video>}
-        {type == "audio" && <audio autoPlay ref={audioRef}></audio>}
+        {type == "video" && <video className="player-bg" playsInline autoPlay muted ref={bgRef}></video>}
+        {type == "video" && <video autoPlay playsInline ref={videoRef}></video>}
+        {type == "audio" && <audio autoPlay playsInline ref={audioRef}></audio>}
     </div>
 }
 
