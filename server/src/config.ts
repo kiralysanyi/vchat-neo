@@ -11,10 +11,12 @@ const ENABLE_API = process.env.ENABLE_API ? process.env.ENABLE_API === "true" : 
 const ZITADEL_DOMAIN = process.env.ZITADEL_DOMAIN ? process.env.ZITADEL_DOMAIN : null
 const ZITADEL_CLIENT_ID = process.env.ZITADEL_CLIENT_ID ? process.env.ZITADEL_CLIENT_ID : null
 const ZITADEL_USE_ROLES = process.env.ZITADEL_USE_ROLES === "true" ? true : false
+// this only needed to be specified in dev setups and non container environments
+const ROOMSTORE = process.env.ROOMSTORE ? process.env.ROOMSTORE : "/rooms.json"
 
 if (isDev()) {
     process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
 }
 
 
-export { PORT, LISTEN_IPS, WORKERS, SERVERPASS, CLEANUP_INTERVAL, ENABLE_API, ZITADEL_CLIENT_ID, ZITADEL_DOMAIN, ZITADEL_USE_ROLES }
+export { PORT, LISTEN_IPS, WORKERS, SERVERPASS, CLEANUP_INTERVAL, ENABLE_API, ZITADEL_CLIENT_ID, ZITADEL_DOMAIN, ZITADEL_USE_ROLES, ROOMSTORE }

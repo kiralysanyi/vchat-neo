@@ -224,6 +224,14 @@ input[type="range"]::-moz-range-thumb {
   @apply flex flex-col gap-1.5;
 }
 
+.form-group-row {
+  @apply flex flex-row gap-1.5;
+}
+
+input[type="checkbox"] {
+  @apply w-6 h-6
+}
+
 .header {
   @apply fixed top-0 left-0 w-full px-6 py-3 z-10 flex items-center gap-4 backdrop-blur-xl border-b;
   background-color: var(--bg-glass);

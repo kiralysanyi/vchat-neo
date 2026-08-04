@@ -43,7 +43,8 @@ const createApiHandler = (meetings: Record<string, Meeting>, workers: Worker[], 
             }, (60 * 1000) * CLEANUP_INTERVAL),
             description: "Created by external API",
             external: true,
-            password: key
+            password: key,
+            permanent: false
         }
 
         return res.status(201).json({
