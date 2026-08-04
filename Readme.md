@@ -64,6 +64,7 @@ If you use roles:
 Roles (these are only needed if ZITADEL_USE_ROLES enabled):
 - login_default (Optional, the app never checks for it, only needed if you use "Only authorized users can authenticate" option in zitadel project)
 - meet_create (Mandatory, if a user doesn't have this role, the app wont let them create new meetings)
+- management (Instance management interface will only work if you set up this)
 
 ## Notes
 

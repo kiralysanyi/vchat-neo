@@ -10,12 +10,17 @@ import { AuthProvider, type AuthProviderProps } from 'react-oidc-context'
 import AuthWrapper from './wrappers/AuthWrapper'
 import Callback from './pages/Callback'
 import { WebStorageStateStore } from 'oidc-client-ts'
+import ManagementPage from './pages/Management'
 
 const routes: RouteObject[] = [
   {
     index: true,
     path: "/",
     element: <Index />
+  },
+  {
+    path: "/manage",
+    element: <ManagementPage />
   },
   {
     path: "/meeting",
@@ -36,8 +41,8 @@ const routes: RouteObject[] = [
 
 
 getAuthConfig().then((config) => {
-  sessionStorage.setItem("authconfig", JSON.stringify(config))
   if (config == null) {
+    sessionStorage.removeItem("authconfig")
     // auth disabled
     const router = createBrowserRouter(routes)
 
@@ -48,6 +53,8 @@ getAuthConfig().then((config) => {
       </>
     )
   } else {
+    sessionStorage.setItem("authconfig", JSON.stringify(config));
+
     // auth enabled
     (window as any).authenabled = true;
     const oidcConfig: AuthProviderProps = {
