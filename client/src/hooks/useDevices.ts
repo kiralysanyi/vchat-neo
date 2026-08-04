@@ -77,6 +77,10 @@ const useDevices = () => {
     }, [loaded, selectedAudioDevice, selectedVideoDevice])
 
     useEffect(() => {
+        if (!pastCheck) {
+            return;
+        }
+
         navigator.mediaDevices.enumerateDevices().then((devinfo) => {
             const audioArray: MediaDeviceInfo[] = [];
             const videoArray: MediaDeviceInfo[] = [];
@@ -102,7 +106,7 @@ const useDevices = () => {
                 setSelectedVideoDevice(videoArray[0])
             }
         })
-    }, [])
+    }, [pastCheck])
 
     return { videoDevices, audioDevices, selectedAudioDevice, selectedVideoDevice, setSelectedAudioDevice, setSelectedVideoDevice, pastCheck, checkError }
 }
