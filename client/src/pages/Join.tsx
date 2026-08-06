@@ -37,8 +37,6 @@ const Join = () => {
 
     const [error, setError] = useState<string>()
     const [serverPass, setServerPass] = useState("");
-    const [permanent, setPermanent] = useState(false);
-
     const [authNeeded, setAuthNeeded] = useState(false);
     const { canCreate } = useRoleManager();
 
@@ -100,7 +98,7 @@ const Join = () => {
         localStorage.setItem("nickname", newNickname);
 
         if (newMeet) {
-            const body: Record<string, string | boolean> = { permanent: permanent }
+            const body: Record<string, string> = {}
             if (password.length > 0) {
                 body.password = password;
             }
@@ -310,16 +308,10 @@ const Join = () => {
                     <label htmlFor="nickname">Nickname</label>
                     <input disabled={auth ? true : false} type="text" name="nickname" id="nickname" autoComplete="off" value={newNickname} onChange={(ev) => { setNewNickname(ev.target.value) }} />
                 </div>
-                {newMeet && <>
-                    <div className="form-group">
-                        <label htmlFor="password">Set password (leave empty for none)</label>
-                        <input value={password} onChange={(ev) => setPassword(ev.target.value)} onFocus={() => setInpType("password")} autoComplete="off" type={inpType} id="password" name="password" placeholder="Password" />
-                    </div>
-                    <div className="form-group-row">
-                        <input checked={permanent} onChange={(e) => setPermanent(e.target.checked)} type="checkbox" name="permanent" id="permanent" />
-                        <label htmlFor="permanent">Permanent room</label>
-                    </div>
-                </>}
+                {newMeet && <div className="form-group">
+                    <label htmlFor="password">Set password (leave empty for none)</label>
+                    <input value={password} onChange={(ev) => setPassword(ev.target.value)} onFocus={() => setInpType("password")} autoComplete="off" type={inpType} id="password" name="password" placeholder="Password" />
+                </div>}
                 {authNeeded && <div className="form-group">
                     <label htmlFor="srvPass">Server password (required to create meeting)</label>
                     <input type={inpType} onFocus={() => setInpType("password")} id="srvPass" name="srvPass" autoComplete="off" value={serverPass} onChange={(ev) => setServerPass(ev.target.value)} />

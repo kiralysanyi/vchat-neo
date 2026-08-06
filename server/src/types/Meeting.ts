@@ -9,9 +9,8 @@ interface Meeting {
     router: Router,
     producerTransports: Record<string, ExtendedProducer>,
     password?: string,
-    timeout?: any,
-    external?: boolean,
-    permanent: boolean
+    timeout: any,
+    external?: boolean
 }
 
 export type { Meeting }

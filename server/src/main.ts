@@ -13,13 +13,12 @@ import createWorkers from "./mediasoup/createWorkers";
 import createApiHandler from "./api_external/router";
 import { authRouter, checkJwt, role_createCheckMiddleware } from "./authHandler";
 import tokenVerifier from "./utils/tokenVerifier";
-import { getRooms, saveRooms } from "./utils/roomSaving";
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, { cors: { origin: "*" } });
 
-const meetings: Record<string, Meeting> = getRooms();
+const meetings: Record<string, Meeting> = {};
 
 const cleanMeeting = (mId: string) => {
     if (!meetings[mId]) {
@@ -35,42 +34,19 @@ const cleanMeeting = (mId: string) => {
 
     meetings[mId].router.close();
     delete meetings[mId];
-    saveRooms(meetings)
 }
 
 app.use(cors({ origin: "*" }))
 app.use(express.json())
 
 const ZITADEL_ENABLED = ZITADEL_CLIENT_ID != null && ZITADEL_DOMAIN != null
-let lastSelectedWorker = 0;
+
+if (ZITADEL_ENABLED) {
+    app.use("/api/auth", authRouter)
+    app.use("/api", checkJwt)
+}
 
 createWorkers().then(async (workers) => {
-    for (let i in meetings) {
-        // attach cleaning to non permanent rooms after loading from json
-        if (meetings[i].permanent != true) {
-            meetings[i].timeout = setTimeout(() => {
-                cleanMeeting(i)
-            }, (60 * 1000) * CLEANUP_INTERVAL);
-        }
-
-        if (lastSelectedWorker > workers.length - 1) {
-            lastSelectedWorker = 0;
-        }
-
-        meetings[i].router = await createRouter(workers[lastSelectedWorker]);
-        meetings[i].participants = {};
-        meetings[i].producerTransports = {};
-        console.log("Loaded room from save: ", i, meetings[i].permanent)
-    }
-    // enable external api
-    if (ENABLE_API == true) {
-        app.use("/api/external", createApiHandler(meetings, workers, cleanMeeting));
-        console.log("External api enabled")
-    }
-    if (ZITADEL_ENABLED) {
-        app.use("/api/auth", authRouter)
-        app.use("/api", checkJwt)
-    }
     io.on("connection", async (socket: ExtendedSocket) => {
         //meeting related stuff
 
@@ -318,18 +294,16 @@ createWorkers().then(async (workers) => {
     })
 
     // todo: add actual load balancing
+    let lastSelectedWorker = 0;
 
-    // enable role check
+    // create meeting
     if (ZITADEL_USE_ROLES == true && ZITADEL_ENABLED == true) {
         app.use("/api/meeting/:id", role_createCheckMiddleware)
     }
-
-    // create meeting
     app.post("/api/meeting/:id", async (req, res) => {
         const id = req.params.id;
         const password = req.body.password ? req.body.password : undefined;
         const srvPass = req.body.srvPass ? req.body.srvPass : undefined;
-        const permanent = req.body.permanent;
 
         if (id == "join" || /[^\w-]/.test(id)) {
             return res.status(400).json({
@@ -369,25 +343,16 @@ createWorkers().then(async (workers) => {
             producerTransports: {},
             router: await createRouter(workers[lastSelectedWorker]),
             password: password,
-            permanent: permanent
-        }
-
-        if (permanent != true) {
-            meetings[id].timeout = setTimeout(() => {
+            timeout: setTimeout(() => {
                 cleanMeeting(id)
             }, (60 * 1000) * CLEANUP_INTERVAL)
-        } else {
-            console.log("Permanent room created!")
         }
-
-        saveRooms(meetings)
 
         return res.status(201).json({
             message: "Created"
         })
     })
 
-    // needs auth endpoint (only show roompass field on client side based on this)
     app.get("/api/needsauth", (req, res) => {
         if (SERVERPASS != undefined) {
             return res.json({
@@ -399,6 +364,12 @@ createWorkers().then(async (workers) => {
             })
         }
     })
+
+
+    if (ENABLE_API == true) {
+        app.use("/api/external", createApiHandler(meetings, workers, cleanMeeting));
+        console.log("External api enabled")
+    }
 
     // host client if available
     if (fs.existsSync("./public")) {
